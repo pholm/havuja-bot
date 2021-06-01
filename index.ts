@@ -63,7 +63,7 @@ Hyvä homma ${ctx.message.from.first_name}! Taas voi pötcöttää pari viikkoa.
 
 const statsReply = async (ctx: Context<{ message: Update.New & Update.NonChannel & Message.TextMessage; update_id: number; }> & Omit<MyContext, keyof Context<Update>>) => {
     await db.read()
-    const entries = db.data.log;
+    const entries = (db.data ||= { log: [] }).log
 
     const groupedEntries = _
         .chain(entries)
