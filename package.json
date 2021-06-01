@@ -1,0 +1,23 @@
+{
+  "name": "tonni-bot",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "author": "Pekka Lammi",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^15.6.1",
+    "ts-node-dev": "^1.1.6"
+  },
+  "scripts": {
+    "dev": "ts-node-dev index.ts"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.14.170",
+    "date-fns": "^2.22.1",
+    "dotenv": "^10.0.0",
+    "lodash": "^4.17.21",
+    "lowdb": "github:dankreiger/lowdb#chore/esm-cjs-hybrid-WITH-LIB",
+    "telegraf": "^4.3.0",
+    "typescript": "^4.3.2"
+  }
+}
