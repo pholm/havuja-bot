@@ -1,11 +1,14 @@
 import { Telegraf, Context } from "telegraf";
-import { join } from "path";
-import { Low, JSONFile } from "lowdb";
 import { formatDistance, parseISO } from "date-fns";
 import { fi } from "date-fns/locale";
 import { Update, Message } from "typegram";
+const db = require("./db");
+
+require("dotenv").config();
 
 var _ = require("lodash");
+
+db.initializeDb();
 
 const validChatId = (chatId) => {
     return true;
@@ -37,22 +40,9 @@ type Data = {
     log: {
         userId: number;
         timestamp: Date;
-        firstName: string;
         amount: number;
     }[];
 };
-
-require("dotenv").config();
-
-// Use JSON file for storage
-const file = join(__dirname, "db.json");
-const adapter = new JSONFile<Data>(file);
-const db = new Low(adapter);
-
-(async function () {
-    await db.read();
-    db.data ||= { log: [] };
-})();
 
 // Define your own context type
 interface MyContext extends Context {
@@ -69,10 +59,7 @@ const cheersReply = async (
     }> &
         Omit<MyContext, keyof Context<Update>>
 ) => {
-    await db.read();
-    const entries = db.data.log;
-
-    const entriesForUser = entries.filter((i) => i.userId === ctx.from.id);
+    const entriesForUser = await db.getRecordsForUser(ctx.from.id);
 
     const amountTotal = _.round(
         entriesForUser.reduce((acc, cur) => acc + cur.amount, 0),
@@ -94,19 +81,20 @@ const statsReply = async (
     }> &
         Omit<MyContext, keyof Context<Update>>
 ) => {
-    await db.read();
-    const entries = (db.data ||= { log: [] }).log;
+    const entries = await db.getRecordsForUser(ctx.from.id);
 
     const groupedEntries = _.chain(entries)
         .groupBy("userId")
-        .mapValues((entry) => {
+        .mapValues((entryList) => {
+            console.log(entryList);
+            const firstName = entryList[0].first_name;
             return {
+                firstName: firstName,
                 amount: _.round(
-                    entry.reduce((acc, cur) => acc + cur.amount, 0),
+                    entryList.reduce((acc, cur) => acc + cur.amount, 0),
                     2
                 ),
-                first_name: entry[entry.length - 1].firstName,
-                last: entry[entry.length - 1].timestamp,
+                last: entryList[entryList.length - 1].timestamp,
             };
         })
         .values()
@@ -115,12 +103,12 @@ const statsReply = async (
         .value();
 
     const retString: string[] = groupedEntries.map((entry) => {
-        const agoString = formatDistance(parseISO(entry.last), new Date(), {
+        const agoString = formatDistance(Date.parse(entry.last), new Date(), {
             addSuffix: true,
             locale: fi,
         });
 
-        return `<b>${entry.first_name} - ${String(
+        return `<b>${entry.firstName} - ${String(
             entry.amount
         )} kilometriä</b>\nedellinen ${agoString}\n\n`;
     });
@@ -147,17 +135,15 @@ bot.on("text", async (ctx) => {
             const userInput = ctx.message.text.split(" ")[1];
             const kilometers = parseFloat(userInput?.replace(",", "."));
             const kmRounded = _.round(kilometers, 2);
-            console.log(kmRounded);
             if (isNaN(kmRounded)) {
                 ctx.reply("lisää kilometrit komennolla /latua <kilometri>");
             } else {
-                db.data.log.push({
-                    userId: ctx.message.from.id,
-                    timestamp: new Date(),
-                    firstName: ctx.message.from.first_name,
-                    amount: kilometers,
-                });
-                await db.write();
+                await db.writeRecordToDb(
+                    ctx.message.from.id,
+                    ctx.message.from.first_name,
+                    new Date(),
+                    kilometers
+                );
                 ctx.reply(await cheersReply(ctx));
             }
         } else if (ctx.message.text.includes("/stats")) {
