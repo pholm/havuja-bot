@@ -1,6 +1,6 @@
 # havuja-bot
 
-A telegram bot for tracking skied distance in a group chat. Based on [https://github.com/peksi/tonni-bot](tonni_bot) by [https://github.com/peksi](peksi).
+A telegram bot for tracking skied distance in a group chat. Based on [tonni-bot](https://github.com/peksi/tonni-bot) by [peksi]https://github.com/peksi).
 
 ## Dev
 
