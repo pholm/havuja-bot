@@ -153,6 +153,11 @@ bot.on("text", async (ctx) => {
     }
 });
 
-bot.launch();
+bot.launch({
+    webhook: {
+        domain: "https://havuja.herokuapp.com/${process.env.BOT_TOKEN}",
+        port: parseInt(process.env.PORT) || 80,
+    },
+});
 
 console.log("Ready");
