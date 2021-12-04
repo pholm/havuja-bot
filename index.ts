@@ -2,13 +2,23 @@ import { Telegraf, Context } from "telegraf";
 import { formatDistance, parseISO } from "date-fns";
 import { fi } from "date-fns/locale";
 import { Update, Message } from "typegram";
-const db = require("./db");
+import db = require("./db");
+import express = require("express");
+const expressApp = express();
 
 require("dotenv").config();
 
 var _ = require("lodash");
 
 db.initializeDb();
+
+const port = process.env.PORT || 3000;
+expressApp.get("/", (req, res) => {
+    res.send("Hello World!");
+});
+expressApp.listen(port, () => {
+    console.log(`Listening on port ${port}`);
+});
 
 const validChatId = (chatId) => {
     return true;
@@ -35,14 +45,6 @@ const timeUntilDeadLineString: string = `Aikaa Wappuun ${
 } kuukautta ja ${
     timeUntilDeadLine().days
 } päivää. Lumet saattaa kyllä sulaa ennen sitä :D`;
-
-type Data = {
-    log: {
-        userId: number;
-        timestamp: Date;
-        amount: number;
-    }[];
-};
 
 // Define your own context type
 interface MyContext extends Context {
@@ -86,7 +88,6 @@ const statsReply = async (
     const groupedEntries = _.chain(entries)
         .groupBy("userId")
         .mapValues((entryList) => {
-            console.log(entryList);
             const firstName = entryList[0].first_name;
             return {
                 firstName: firstName,
