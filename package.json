@@ -11,8 +11,7 @@
     "scripts": {
         "dev": "ts-node-dev index.ts",
         "start": "node dist/index.js",
-        "postinstall": "tsc",
-        "build": "tsc"
+        "postinstall": "tsc"
     },
     "dependencies": {
         "@types/lodash": "^4.14.170",
