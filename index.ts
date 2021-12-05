@@ -3,22 +3,12 @@ import { formatDistance, parseISO } from "date-fns";
 import { fi } from "date-fns/locale";
 import { Update, Message } from "typegram";
 import db = require("./db");
-import express = require("express");
-const expressApp = express();
 
 require("dotenv").config();
 
 var _ = require("lodash");
 
 db.initializeDb();
-
-const port = process.env.PORT || 3000;
-expressApp.get("/", (req, res) => {
-    res.send("Hello World!");
-});
-expressApp.listen(port, () => {
-    console.log(`Listening on port ${port}`);
-});
 
 const validChatId = (chatId) => {
     return true;
@@ -153,11 +143,6 @@ bot.on("text", async (ctx) => {
     }
 });
 
-bot.launch({
-    webhook: {
-        "https://havuja.herokuapp.com",
-        port: 5000,
-    },
-});
+bot.launch();
 
 console.log("Ready");
