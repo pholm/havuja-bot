@@ -1,7 +1,6 @@
 FROM node:alpine
-EXPOSE 3000 9229
 
-RUN apk add --no-cache bash git openssh
+RUN apk add --no-cache git
 
 WORKDIR /usr/havujabot
 

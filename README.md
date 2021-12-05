@@ -6,5 +6,4 @@ A telegram bot for tracking skied distance in a group chat. Based on [tonni-bot]
 
 -   create a telegram bot using BotFather
 -   add .env file and fill BOT_TOKEN with right info
--   npm install
--   npm run dev
+-   use docker-compose to run the bot (currently set up for production, see Dockerfile)
