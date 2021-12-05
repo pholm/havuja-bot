@@ -3,13 +3,19 @@ services:
     worker:
         build: .
         ports:
-            - "3000:3000"
+            - 8080:8080
         volumes:
             - .:/code
         depends_on:
             - postgres
-    postgres:
-        image: postgres:latest-alpine
+        environment:
+            - PGHOST=pg
+            - PGDATABASE=postgres
+            - PGUSER=postgres
+            - PGPASSWORD=postgres
+    pg:
+        image: postgres:alpine
+        restart: always
         volumes:
             - postgresvolume01:/var/lib/postgresql/data
         ports:

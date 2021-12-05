@@ -3,9 +3,7 @@ import { Pool } from "pg";
 var _ = require("lodash");
 require("dotenv").config();
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
+const pool = new Pool();
 
 pool.connect().catch((e) => console.error(e.stack));
 

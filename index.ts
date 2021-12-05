@@ -62,7 +62,7 @@ const cheersReply = async (
     
     Se oli kunnon repäsy.
     
-Hyvä homma ${ctx.message.from.first_name}! Taas voi pötcöttää pari viikkoa. Sinulla on nyt ${amountTotal} kilometriä kasassa.
+Hyvä homma ${ctx.message.from.first_name}! Sinulla on nyt ${amountTotal} kilometriä kasassa.
                 `;
 };
 
@@ -114,7 +114,7 @@ ${timeUntilDeadLineString}
 };
 
 bot.start((ctx) => ctx.reply("Se on raaka peli"));
-bot.help((ctx) => ctx.reply("Apua ei tule"));
+bot.help((ctx) => ctx.reply("Kannattaa jo suunnata Alkoon"));
 bot.on("text", async (ctx) => {
     console.log((await ctx.getChat()).id);
 

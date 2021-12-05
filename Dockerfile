@@ -1,16 +1,18 @@
 FROM node:alpine
 EXPOSE 3000 9229
 
+RUN apk add --no-cache bash git openssh
+
 WORKDIR /usr/havujabot
 
 COPY package.json .
 
-RUN rm -rf node_modules 
+COPY package-lock.json .
 
-RUN npm install ci
+RUN npm ci
 
 COPY . .
 
-#RUN tsc
+RUN npm run build
 
 CMD ["npm", "start"]
