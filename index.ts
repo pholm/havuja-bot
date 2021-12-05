@@ -154,6 +154,7 @@ bot.on("text", async (ctx) => {
 });
 
 bot.telegram.setWebhook(`https://server.tld:8443/${process.env.BOT_TOKEN}`);
+// @ts-ignore
 bot.startWebhook(`/${process.env.BOT_TOKEN}`, null, process.env.PORT || 3000);
 
 bot.launch();
