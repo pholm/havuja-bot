@@ -153,9 +153,15 @@ bot.on("text", async (ctx) => {
     }
 });
 
-bot.telegram.setWebhook(`https://server.tld:8443/${process.env.BOT_TOKEN}`);
+bot.telegram.setWebhook(
+    `https://havuja.herokuapp.com:8443/bot${process.env.BOT_TOKEN}`
+);
 // @ts-ignore
-bot.startWebhook(`/${process.env.BOT_TOKEN}`, null, process.env.PORT || 3000);
+bot.startWebhook(
+    `/bot${process.env.BOT_TOKEN}`,
+    null,
+    process.env.PORT || 3000
+);
 
 bot.launch();
 
