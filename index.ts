@@ -159,4 +159,5 @@ bot.telegram.setWebhook(
 // @ts-ignore
 bot.startWebhook(`/bot${process.env.BOT_TOKEN}`, null, 5000);
 
+bot.launch();
 console.log("Ready");
