@@ -1,7 +1,7 @@
-import { Pool } from "pg";
+require('dotenv').config();
+import { Pool } from 'pg';
 
-var _ = require("lodash");
-require("dotenv").config();
+var _ = require('lodash');
 
 const pool = new Pool();
 
@@ -49,15 +49,14 @@ export const getRecordsForUser = async (userId: number) => {
     return result.rows;
 };
 
-export const getFirstNameForUser = async (userId: number): Promise<string> => {
-    const query = `SELECT first_name FROM users WHERE user_id = $1`;
-    const values = [userId];
-    const result = await pool.query(query, values).catch((err) =>
+export const getRecordsForAllUsers = async () => {
+    const query = `SELECT ski_entries.amount, users.first_name, ski_entries.timestamp FROM ski_entries, users WHERE users.user_id = ski_entries.user_id ORDER BY timestamp DESC`;
+    const result = await pool.query(query).catch((err) =>
         setImmediate(() => {
             throw err;
         })
     );
-    return result.rows[0].first_name;
+    return result.rows;
 };
 
 export const initializeDb = async () => {

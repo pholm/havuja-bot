@@ -1,12 +1,11 @@
-import { Telegraf, Context } from "telegraf";
-import { formatDistance, parseISO } from "date-fns";
-import { fi } from "date-fns/locale";
-import { Update, Message } from "typegram";
-import db = require("./db");
+require('dotenv').config();
+import { Telegraf, Context } from 'telegraf';
+import { formatDistance, parseISO } from 'date-fns';
+import { fi } from 'date-fns/locale';
+import { Update, Message } from 'typegram';
+import db = require('./db');
 
-require("dotenv").config();
-
-var _ = require("lodash");
+var _ = require('lodash');
 
 db.initializeDb();
 
@@ -15,7 +14,7 @@ const validChatId = (chatId) => {
     // return chatId === -416691354
 };
 
-const deadLineDate = new Date("2022-05-01T00:00:00.000Z");
+const deadLineDate = new Date('2022-05-01T00:00:00.000Z');
 
 interface DeadLineObject {
     months: number;
@@ -73,10 +72,10 @@ const statsReply = async (
     }> &
         Omit<MyContext, keyof Context<Update>>
 ) => {
-    const entries = await db.getRecordsForUser(ctx.from.id);
+    const entries = await db.getRecordsForAllUsers();
 
     const groupedEntries = _.chain(entries)
-        .groupBy("userId")
+        .groupBy('userId')
         .mapValues((entryList) => {
             const firstName = entryList[0].first_name;
             return {
@@ -89,7 +88,7 @@ const statsReply = async (
             };
         })
         .values()
-        .sortBy("amount")
+        .sortBy('amount')
         .reverse()
         .value();
 
@@ -107,27 +106,26 @@ const statsReply = async (
     return `
 Nonii, katellaas vähä paljo peli
 
-${retString.join("")}
+${retString.join('')}
 ${timeUntilDeadLineString}
 
 `;
 };
 
-bot.start((ctx) => ctx.reply("Se on raaka peli"));
-bot.help((ctx) => ctx.reply("Kannattaa jo suunnata Alkoon"));
-bot.on("text", async (ctx) => {
-    console.log((await ctx.getChat()).id);
-
+bot.start((ctx) => ctx.reply('Se on raaka peli'));
+bot.help((ctx) => ctx.reply('Kannattaa jo suunnata Alkoon'));
+bot.on('text', async (ctx) => {
+    console.log(`${ctx.message.from.first_name}: ${ctx.message.text}`);
     if (!!ctx.message.text) {
         if (!validChatId((await ctx.getChat()).id)) {
-            ctx.reply("Kirjaa kaikki jutut chätin kautta");
-        } else if (ctx.message.text.includes("/latua")) {
+            ctx.reply('Kirjaa kaikki jutut chätin kautta');
+        } else if (ctx.message.text.includes('/latua')) {
             // replace comma with dot for correct parsing. Round to 2 decimal with lodash
-            const userInput = ctx.message.text.split(" ")[1];
-            const kilometers = parseFloat(userInput?.replace(",", "."));
+            const userInput = ctx.message.text.split(' ')[1];
+            const kilometers = parseFloat(userInput?.replace(',', '.'));
             const kmRounded = _.round(kilometers, 2);
             if (isNaN(kmRounded)) {
-                ctx.reply("lisää kilometrit komennolla /latua <kilometri>");
+                ctx.reply('lisää kilometrit komennolla /latua <kilometri>');
             } else {
                 await db.writeRecordToDb(
                     ctx.message.from.id,
@@ -137,7 +135,7 @@ bot.on("text", async (ctx) => {
                 );
                 ctx.reply(await cheersReply(ctx));
             }
-        } else if (ctx.message.text.includes("/stats")) {
+        } else if (ctx.message.text.includes('/stats')) {
             ctx.replyWithHTML(await statsReply(ctx));
         }
     }
@@ -145,4 +143,4 @@ bot.on("text", async (ctx) => {
 
 bot.launch();
 
-console.log("Ready");
+console.log('Ready');
