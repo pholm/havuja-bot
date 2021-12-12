@@ -38,19 +38,19 @@ export const writeRecordToDb = async (
     );
 };
 
-export const getRecordsForUser = async (userId: number) => {
-    const query = `SELECT ski_entries.amount, users.first_name, ski_entries.timestamp FROM ski_entries, users WHERE ski_entries.user_id = $1 AND users.user_id = $1 ORDER BY timestamp DESC`;
+export const getStatsForUser = async (userId: number) => {
+    const query = `SELECT SUM(ski_entries.amount) as amount, users.first_name FROM ski_entries, users WHERE ski_entries.user_id = $1 AND users.user_id = $1 GROUP BY users.first_name`;
     const values = [userId];
     const result = await pool.query(query, values).catch((err) =>
         setImmediate(() => {
             throw err;
         })
     );
-    return result.rows;
+    return result.rows[0];
 };
 
-export const getRecordsForAllUsers = async () => {
-    const query = `SELECT ski_entries.amount, users.first_name, ski_entries.timestamp FROM ski_entries, users WHERE users.user_id = ski_entries.user_id ORDER BY timestamp DESC`;
+export const getStatistics = async () => {
+    const query = `SELECT SUM(ski_entries.amount) as amount, users.first_name, MAX(ski_entries.timestamp) as timestamp FROM ski_entries, users WHERE users.user_id = ski_entries.user_id GROUP BY users.first_name, ski_entries.user_id ORDER BY SUM(ski_entries.amount) DESC`;
     const result = await pool.query(query).catch((err) =>
         setImmediate(() => {
             throw err;

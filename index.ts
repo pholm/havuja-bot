@@ -31,9 +31,7 @@ const timeUntilDeadLine = (): DeadLineObject => {
 
 const timeUntilDeadLineString: string = `Aikaa Wappuun ${
     timeUntilDeadLine().months
-} kuukautta ja ${
-    timeUntilDeadLine().days
-} päivää. Lumet saattaa kyllä sulaa ennen sitä :D`;
+} kuukautta ja ${timeUntilDeadLine().days} päivää!`;
 
 // Define your own context type
 interface MyContext extends Context {
@@ -50,18 +48,13 @@ const cheersReply = async (
     }> &
         Omit<MyContext, keyof Context<Update>>
 ) => {
-    const entriesForUser = await db.getRecordsForUser(ctx.from.id);
-
-    const amountTotal = _.round(
-        entriesForUser.reduce((acc, cur) => acc + cur.amount, 0),
-        2
-    );
+    const stats = await db.getStatsForUser(ctx.from.id);
 
     return `
     
     Se oli kunnon repäsy.
     
-Hyvä homma ${ctx.message.from.first_name}! Sinulla on nyt ${amountTotal} kilometriä kasassa.
+Hyvä homma ${ctx.message.from.first_name}! Sinulla on nyt ${stats.amount} kilometriä kasassa.
                 `;
 };
 
@@ -72,33 +65,19 @@ const statsReply = async (
     }> &
         Omit<MyContext, keyof Context<Update>>
 ) => {
-    const entries = await db.getRecordsForAllUsers();
+    const userListWithScores = await db.getStatistics();
 
-    const groupedEntries = _.chain(entries)
-        .groupBy('userId')
-        .mapValues((entryList) => {
-            const firstName = entryList[0].first_name;
-            return {
-                firstName: firstName,
-                amount: _.round(
-                    entryList.reduce((acc, cur) => acc + cur.amount, 0),
-                    2
-                ),
-                last: entryList[entryList.length - 1].timestamp,
-            };
-        })
-        .values()
-        .sortBy('amount')
-        .reverse()
-        .value();
+    const retString: string[] = userListWithScores.map((entry) => {
+        const agoString = formatDistance(
+            Date.parse(entry.timestamp),
+            new Date(),
+            {
+                addSuffix: true,
+                locale: fi,
+            }
+        );
 
-    const retString: string[] = groupedEntries.map((entry) => {
-        const agoString = formatDistance(Date.parse(entry.last), new Date(), {
-            addSuffix: true,
-            locale: fi,
-        });
-
-        return `<b>${entry.firstName} - ${String(
+        return `<b>${entry.first_name} - ${String(
             entry.amount
         )} kilometriä</b>\nedellinen ${agoString}\n\n`;
     });
@@ -131,7 +110,7 @@ bot.on('text', async (ctx) => {
                     ctx.message.from.id,
                     ctx.message.from.first_name,
                     new Date(),
-                    kilometers
+                    kmRounded
                 );
                 ctx.reply(await cheersReply(ctx));
             }
