@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3.3"
 services:
     worker:
         build: .
@@ -7,7 +7,7 @@ services:
         volumes:
             - .:/code
         depends_on:
-            - postgres
+            - pg
         environment:
             - PGHOST=pg
             - PGDATABASE=postgres
@@ -18,8 +18,8 @@ services:
         restart: always
         volumes:
             - postgresvolume01:/var/lib/postgresql/data
-        ports:
-            - "5432:5432"
+#        ports:
+#            - "5432:5432"
         environment:
             - POSTGRES_USER=postgres
             - POSTGRES_PASSWORD=postgres
