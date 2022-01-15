@@ -54,7 +54,7 @@ const cheersReply = async (
     
     Se oli kunnon repäsy.
     
-Hyvä homma ${ctx.message.from.first_name}! Sinulla on nyt ${stats.amount} kilometriä kasassa.
+Hyvä homma ${ctx.message.from.first_name}! Sinulla on nyt ${stats.amount.toFixed(2)} kilometriä kasassa.
                 `;
 };
 
@@ -78,7 +78,7 @@ const statsReply = async (
         );
 
         return `<b>${entry.first_name} - ${String(
-            entry.amount
+            entry.amount.toFixed(2)
         )} kilometriä</b>\nedellinen ${agoString}\n\n`;
     });
 
