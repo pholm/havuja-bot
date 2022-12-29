@@ -29,9 +29,11 @@ const timeUntilDeadLine = (): DeadLineObject => {
   return { months, days };
 };
 
-const timeUntilDeadLineString: () => string = `Aikaa Wappuun ${
+const timeUntilDeadLineString: () => string = () => {
+  return `Aikaa Wappuun ${
   timeUntilDeadLine().months
-} kuukautta ja ${timeUntilDeadLine().days} päivää!`;
+} kuukautta ja ${timeUntilDeadLine().days} päivää!`
+};
 
 // Define your own context type
 interface MyContext extends Context {
