@@ -29,7 +29,7 @@ const timeUntilDeadLine = (): DeadLineObject => {
   return { months, days };
 };
 
-const timeUntilDeadLineString: string = `Aikaa Wappuun ${
+const timeUntilDeadLineString: () => string = `Aikaa Wappuun ${
   timeUntilDeadLine().months
 } kuukautta ja ${timeUntilDeadLine().days} päivää!`;
 
@@ -84,7 +84,7 @@ const statsReply = async (
 Nonii, katellaas vähä paljo peli
 
 ${retString.join("")}
-${timeUntilDeadLineString}
+${timeUntilDeadLineString()}
 
 `;
 };
