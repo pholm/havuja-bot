@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 import { Pool } from 'pg';
 
 var _ = require('lodash');
@@ -16,7 +17,7 @@ const createUser = async (userId: number, firstName: string) => {
         .catch((err) =>
             setImmediate(() => {
                 throw err;
-            })
+            }),
         );
 };
 
@@ -25,7 +26,7 @@ export const writeRecordToDb = async (
     userId: number,
     firstName: string,
     timestamp: Date,
-    amount: number
+    amount: number,
 ) => {
     // create user if not exists
     await createUser(userId, firstName);
@@ -34,7 +35,7 @@ export const writeRecordToDb = async (
     await pool.query(query, values).catch((err) =>
         setImmediate(() => {
             throw err;
-        })
+        }),
     );
 };
 
@@ -44,7 +45,7 @@ export const getStatsForUser = async (userId: number) => {
     const result = await pool.query(query, values).catch((err) =>
         setImmediate(() => {
             throw err;
-        })
+        }),
     );
     return result.rows[0];
 };
@@ -54,20 +55,20 @@ export const getStatistics = async () => {
     const result = await pool.query(query).catch((err) =>
         setImmediate(() => {
             throw err;
-        })
+        }),
     );
     return result.rows;
 };
 
 export const initializeDb = async () => {
     const createUsersTable = `CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY,
+        user_id BIGINT PRIMARY KEY,
         first_name VARCHAR(255) NOT NULL
     )`;
     await pool.query(createUsersTable).catch((err) =>
         setImmediate(() => {
             throw err;
-        })
+        }),
     );
     const createEntriesTable = `CREATE TABLE IF NOT EXISTS ski_entries (
         id SERIAL PRIMARY KEY,
@@ -78,6 +79,6 @@ export const initializeDb = async () => {
     await pool.query(createEntriesTable).catch((err) =>
         setImmediate(() => {
             throw err;
-        })
+        }),
     );
 };
