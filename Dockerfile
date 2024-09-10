@@ -8,10 +8,14 @@ COPY package.json .
 
 COPY package-lock.json .
 
-RUN npm ci
+RUN npm i
+# RUN npm ci
 
 COPY . .
 
-RUN npm run build
 
-CMD ["npm", "start"]
+## this is for production
+### should probably have own dockerfile for production
+## RUN npm run build
+
+CMD ["npm", "run", "dev"]

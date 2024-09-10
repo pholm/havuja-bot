@@ -39,6 +39,16 @@ export const writeRecordToDb = async (
     );
 };
 
+export const setBet = async (userId: number, bet: number) => {
+    const query = `UPDATE users SET bet = $1 WHERE user_id = $2`;
+    const values = [bet, userId];
+    await pool.query(query, values).catch((err) =>
+        setImmediate(() => {
+            throw err;
+        }),
+    );
+};
+
 export const getStatsForUser = async (userId: number) => {
     const query = `SELECT SUM(ski_entries.amount) as amount, users.first_name FROM ski_entries, users WHERE ski_entries.user_id = $1 AND users.user_id = $1 GROUP BY users.first_name`;
     const values = [userId];
@@ -63,7 +73,8 @@ export const getStatistics = async () => {
 export const initializeDb = async () => {
     const createUsersTable = `CREATE TABLE IF NOT EXISTS users (
         user_id BIGINT PRIMARY KEY,
-        first_name VARCHAR(255) NOT NULL
+        first_name VARCHAR(255) NOT NULL,
+        bet FLOAT DEFAULT NULL
     )`;
     await pool.query(createUsersTable).catch((err) =>
         setImmediate(() => {
