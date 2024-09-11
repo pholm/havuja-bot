@@ -9,21 +9,19 @@ services:
             #- .:/code
         depends_on:
             - pg
-        environment:
-            - PGHOST=pg
-            - PGDATABASE=postgres
-            - PGUSER=postgres
-            - PGPASSWORD=postgres
+        env_file:
+            - .env
         restart: always
     pg:
         image: postgres:alpine
         restart: always
         volumes:
             - postgresvolume01:/var/lib/postgresql/data
-        environment:
-            - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=postgres
-            - POSTGRES_DB=postgres
+        env_file:
+            - .env
+        ## for local debugging
+        ports:
+            - '5432:5432' # Expose port 5432 for PostgreSQL
 volumes:
     postgresvolume01:
         driver: local

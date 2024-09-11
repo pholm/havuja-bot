@@ -95,7 +95,11 @@ export const betWizard = new Scenes.WizardScene<MyWizardContext>(
             });
             return ctx.scene.reenter();
         } else {
-            await db.setBet(ctx.message.from.id, bet);
+            await db.setBet(
+                ctx.message.from.id,
+                ctx.message.from.first_name,
+                bet,
+            );
             await ctx.replyWithPhoto(
                 { source: 'heinis.jpg' },
                 {

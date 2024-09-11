@@ -1,8 +1,11 @@
-require('dotenv').config();
-
 import { Pool } from 'pg';
 
-const pool = new Pool();
+const pool = new Pool({
+    host: process.env.POSTGRES_HOST,
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DATABASE,
+});
 
 pool.connect().catch((e) => console.error(e.stack));
 
@@ -37,7 +40,12 @@ export const writeRecordToDb = async (
     );
 };
 
-export const setBet = async (userId: number, bet: number) => {
+export const setBet = async (
+    userId: number,
+    firstName: string,
+    bet: number,
+) => {
+    await createUser(userId, firstName);
     const query = `UPDATE users SET bet = $1 
                     WHERE user_id = $2`;
     const values = [bet, userId];

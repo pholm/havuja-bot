@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 import { Context, Scenes, Telegraf } from 'telegraf';
 import { betWizard, skiRecordWizard } from './scenes';
 
