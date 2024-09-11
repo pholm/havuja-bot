@@ -38,7 +38,8 @@ export const writeRecordToDb = async (
 };
 
 export const setBet = async (userId: number, bet: number) => {
-    const query = `UPDATE users SET bet = $1 WHERE user_id = $2`;
+    const query = `UPDATE users SET bet = $1 
+                    WHERE user_id = $2`;
     const values = [bet, userId];
     await pool.query(query, values).catch((err) =>
         setImmediate(() => {
@@ -48,7 +49,9 @@ export const setBet = async (userId: number, bet: number) => {
 };
 
 export const getStatsForUser = async (userId: number) => {
-    const query = `SELECT SUM(ski_entries.amount) as amount, users.first_name FROM ski_entries, users WHERE ski_entries.user_id = $1 AND users.user_id = $1 GROUP BY users.first_name`;
+    const query = `SELECT SUM(ski_entries.amount) as amount, users.first_name FROM ski_entries, users 
+                    WHERE ski_entries.user_id = $1 AND users.user_id = $1 
+                    GROUP BY users.first_name`;
     const values = [userId];
     const result = await pool.query(query, values).catch((err) =>
         setImmediate(() => {
@@ -62,10 +65,15 @@ type StatisticItem = {
     amount: number;
     first_name: string;
     timestamp: string;
+    bet: number;
 };
 
 export const getStatistics: () => Promise<StatisticItem[]> = async () => {
-    const query = `SELECT SUM(ski_entries.amount) as amount, users.first_name, MAX(ski_entries.timestamp) as timestamp FROM ski_entries, users WHERE users.user_id = ski_entries.user_id GROUP BY users.first_name, ski_entries.user_id ORDER BY SUM(ski_entries.amount) DESC`;
+    const query = `SELECT SUM(ski_entries.amount) as amount, users.first_name, MAX(ski_entries.timestamp) as timestamp, users.bet 
+                    FROM ski_entries, users 
+                    WHERE users.user_id = ski_entries.user_id AND users.bet IS NOT NULL 
+                    GROUP BY users.first_name, ski_entries.user_id, users.bet 
+                    ORDER BY SUM(ski_entries.amount) DESC`;
     const result = await pool.query(query).catch((err) =>
         setImmediate(() => {
             throw err;

@@ -67,9 +67,11 @@ const statsReply = async (ctx: Context) => {
             },
         );
 
-        return `<b>${entry.first_name} - ${String(
-            entry.amount.toFixed(2),
-        )} kilometriä</b>\nedellinen ${agoString}\n\n`;
+        const betPercentage = ((entry.amount / entry.bet) * 100).toFixed(1);
+
+        return `<b>${entry.first_name} - ${String(entry.amount.toFixed(2))}/${
+            entry.bet
+        }km (${betPercentage}%)</b>\nedellinen ${agoString}\n\n`;
     });
 
     return `

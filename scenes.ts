@@ -83,7 +83,7 @@ export const betWizard = new Scenes.WizardScene<MyWizardContext>(
     async (ctx) => {
         // guard to check if the chat is valid
         if (!('text' in ctx.message)) {
-            ctx.reply('Vastaa nyt järkevästi');
+            ctx.reply('Bettaas nyt järkevästi');
             return ctx.scene.reenter();
         }
         const bet = parseFloat(ctx.message.text);
@@ -96,8 +96,12 @@ export const betWizard = new Scenes.WizardScene<MyWizardContext>(
             return ctx.scene.reenter();
         } else {
             await db.setBet(ctx.message.from.id, bet);
-            // make this a bit more fun and personalized
-            await ctx.reply('Hyvä betti!');
+            await ctx.replyWithPhoto(
+                { source: 'heinis.jpg' },
+                {
+                    caption: `💥💥💥 Hyvä betti ${ctx.message.from.first_name}! 💥💥💥`,
+                },
+            );
         }
         return ctx.scene.leave();
     },
