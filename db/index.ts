@@ -2,8 +2,6 @@ require('dotenv').config();
 
 import { Pool } from 'pg';
 
-var _ = require('lodash');
-
 const pool = new Pool();
 
 pool.connect().catch((e) => console.error(e.stack));
@@ -60,7 +58,13 @@ export const getStatsForUser = async (userId: number) => {
     return result.rows[0];
 };
 
-export const getStatistics = async () => {
+type StatisticItem = {
+    amount: number;
+    first_name: string;
+    timestamp: string;
+};
+
+export const getStatistics: () => Promise<StatisticItem[]> = async () => {
     const query = `SELECT SUM(ski_entries.amount) as amount, users.first_name, MAX(ski_entries.timestamp) as timestamp FROM ski_entries, users WHERE users.user_id = ski_entries.user_id GROUP BY users.first_name, ski_entries.user_id ORDER BY SUM(ski_entries.amount) DESC`;
     const result = await pool.query(query).catch((err) =>
         setImmediate(() => {

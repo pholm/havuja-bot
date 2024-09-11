@@ -1,15 +1,15 @@
 {
     "name": "havuja-bot",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "main": "index.ts",
     "author": "Petrus Holm",
     "license": "MIT",
     "devDependencies": {
         "@types/node": "^15.6.1",
-        "ts-node-dev": "^1.1.6"
+        "ts-node-dev": "^2.0.0"
     },
     "scripts": {
-        "dev": "ts-node-dev index.ts",
+        "dev": "ts-node-dev index.ts --exit-child",
         "start": "node dist/index.js",
         "build": "tsc"
     },
@@ -17,7 +17,6 @@
         "@types/lodash": "^4.14.170",
         "date-fns": "^2.22.1",
         "dotenv": "^10.0.0",
-        "lodash": "^4.17.21",
         "pg": "^8.7.1",
         "telegraf": "^4.3.0",
         "telegraf-session-local": "^2.1.1",
