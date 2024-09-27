@@ -9,7 +9,7 @@
         "ts-node": "^10.9.2"
     },
     "scripts": {
-        "dev": "node -r ts-node/register --watch index.ts --exit-child",
+        "dev": "node -r ts-node/register --watch index.ts",
         "start": "node dist/index.js",
         "build": "tsc"
     },

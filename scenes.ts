@@ -19,10 +19,12 @@ Hyvä homma ${
                 `;
 };
 
+let replyMessageId: number;
+
 export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
     'SKIED_RECORD_WIZARD',
-    (ctx) => {
-        ctx.reply('Ok, laitappas vielä ne kilometrit', {
+    async (ctx) => {
+        const reply = await ctx.reply('Ok, laitappas vielä ne kilometrit', {
             reply_markup: {
                 input_field_placeholder: '12.3',
                 // force the user to reply to the bot
@@ -30,6 +32,8 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
                 one_time_keyboard: true,
             },
         });
+
+        replyMessageId = reply.message_id;
 
         return ctx.wizard.next();
     },
@@ -57,11 +61,21 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
                 new Date(),
                 kmRounded,
             );
+
             await ctx.reply(await cheersReply(ctx), {
                 reply_markup: {
                     remove_keyboard: true,
                 },
             });
+
+            // wait for 1 second
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            // bot's message
+            await ctx.deleteMessage(replyMessageId);
+
+            // user's reply
+            await ctx.deleteMessage(ctx.message.message_id);
         }
         return ctx.scene.leave();
     },

@@ -14,7 +14,7 @@ services:
         ports:
             - 8081:8081
         volumes:
-            - .:/code
+            - .:/usr/havujabot
         depends_on:
             - pg
         env_file:
@@ -27,6 +27,9 @@ services:
             - postgresvolume01:/var/lib/postgresql/data
         env_file:
             - .env
+        ## for local debugging
+        ports:
+            - '5432:5432'
 volumes:
     postgresvolume01:
         driver: local

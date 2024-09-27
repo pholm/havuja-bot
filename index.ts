@@ -92,7 +92,10 @@ bot.use(stage.middleware());
 
 // Register the logging middleware
 bot.use((ctx, next) => {
-    console.log('Got message', ctx.message);
+    // guard if the message has text
+    if ('text' in ctx.message) {
+        console.log(`${ctx.from.first_name}: ${ctx.message.text}`);
+    }
     return next();
 });
 
