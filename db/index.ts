@@ -40,6 +40,17 @@ export const writeRecordToDb = async (
     );
 };
 
+export const getBet = async (userId: number) => {
+    const query = `SELECT bet FROM users WHERE user_id = $1`;
+    const values = [userId];
+    const result = await pool.query(query, values).catch((err) =>
+        setImmediate(() => {
+            throw err;
+        }),
+    );
+    return result.rows[0].bet;
+};
+
 export const setBet = async (
     userId: number,
     firstName: string,
