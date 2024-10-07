@@ -129,7 +129,7 @@ export const betWizard = new Scenes.WizardScene<MyWizardContext>(
             await ctx.replyWithPhoto(
                 { source: 'heinis.jpg' },
                 {
-                    caption: `💥💥💥 Hyvä betti ${ctx.message.from.first_name}! 💥💥💥`,
+                    caption: `💥 Erinomainen betti ${ctx.message.from.first_name}! 💥`,
                 },
             );
         }

@@ -6,7 +6,7 @@ import cron from './weekly';
 import { fi } from 'date-fns/locale';
 import { formatDistance } from 'date-fns';
 
-const LocalSession = require('telegraf-session-local');
+import LocalSession = require('telegraf-session-local');
 
 import db = require('./db');
 
