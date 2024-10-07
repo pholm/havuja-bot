@@ -11,7 +11,7 @@ export const createSkiChart = async (
     const chart = new QuickChart();
     const sortedSkiEntries = skiEntries
         .map((entry) => ({
-            timestamp: new Date(entry.timestamp), // Keep Date objects here
+            timestamp: new Date(entry.timestamp),
             amount: entry.amount,
         }))
         .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
@@ -25,32 +25,49 @@ export const createSkiChart = async (
         return acc;
     }, []);
 
-    const trendData = sortedSkiEntries.map((entry, index) => ({
-        x: entry.timestamp,
-        y: (bet / (sortedSkiEntries.length - 1)) * index,
-    }));
+    // add for the first date a 0 value, to the first position of the array
+    cumulativeSkiData.unshift({ x: sortedSkiEntries[0].timestamp, y: 0 });
 
-    const betData = sortedSkiEntries.map((entry) => ({
-        x: entry.timestamp,
-        y: bet,
-    }));
+    const trendData = [
+        { x: sortedSkiEntries[0].timestamp, y: 0 },
+        { x: deadlineDate, y: bet },
+    ];
 
-    console.log('skidata', cumulativeSkiData);
+    const betData = [
+        { x: sortedSkiEntries[0].timestamp, y: bet },
+        { x: deadlineDate, y: bet },
+    ];
+
+    // labels every two weeks from first entry to deadlineDate
+    const labels = [];
+    const firstEntry = sortedSkiEntries[0].timestamp;
+    const diff = deadlineDate.getTime() - firstEntry.getTime();
+    const days = diff / (1000 * 60 * 60 * 24);
+    const weeks = Math.floor(days / 7);
+    const step = Math.floor(weeks / 7);
+    for (let i = 0; i < weeks; i += step) {
+        const newDate = new Date(
+            firstEntry.getTime() + i * 7 * 24 * 60 * 60 * 1000,
+        );
+        labels.push(newDate);
+    }
+    labels.push(deadlineDate);
 
     chart.setConfig({
         type: 'line',
         data: {
+            labels: labels,
             datasets: [
                 {
                     label: 'Skied',
-                    data: cumulativeSkiData, // Use cumulative data with timestamps
+                    data: cumulativeSkiData,
                     fill: true,
                     borderColor: 'blue',
                     tension: 0.1,
                 },
                 {
                     label: 'Bet',
-                    data: betData, // Use bet data with timestamps
+                    data: betData,
                     fill: false,
                     tension: 0.1,
                     pointRadius: 0,
@@ -59,8 +76,8 @@ export const createSkiChart = async (
                     borderColor: 'rgba(255, 0, 0, 0.3)',
                 },
                 {
-                    label: 'Linear Trend',
-                    data: trendData, // Use trend data with timestamps
+                    label: 'Linear',
+                    data: trendData,
                     fill: false,
                     pointRadius: 0,
                     pointStyle: 'line',
@@ -82,12 +99,15 @@ export const createSkiChart = async (
                         type: 'time',
                         time: {
                             displayFormats: {
-                                day: 'DD.MM.YYYY',
+                                day: 'DD MMM YY',
                             },
                         },
-                        suggestedMax: deadlineDate,
+                        max: deadlineDate,
                         ticks: {
-                            source: 'data', // Use actual data points for ticks
+                            source: 'labels',
+                            major: {
+                                enabled: true,
+                            },
                         },
                     },
                 ],
