@@ -112,8 +112,6 @@ export const betWizard = new Scenes.WizardScene<MyWizardContext>(
             // get current bet from db and check if it's below the new one
             const currentBet = await db.getBet(ctx.message.from.id);
 
-            // angry emoji here
-
             if (currentBet && currentBet > bet) {
                 ctx.reply(`Et voi betata vähemmän kuin ${currentBet} 😡`, {
                     reply_markup: {

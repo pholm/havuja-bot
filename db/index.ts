@@ -48,6 +48,10 @@ export const getBet = async (userId: number) => {
             throw err;
         }),
     );
+    // guard if the user does not exist
+    if (result.rows.length === 0) {
+        return null;
+    }
     return result.rows[0].bet;
 };
 
@@ -56,10 +60,10 @@ export const setBet = async (
     firstName: string,
     bet: number,
 ) => {
-    await createUser(userId, firstName);
-    const query = `UPDATE users SET bet = $1 
-                    WHERE user_id = $2`;
-    const values = [bet, userId];
+    console.log('bet in db', bet);
+    // this neatly handles both insert and update, as well as creates the user if it does not exist!
+    const query = `INSERT INTO users (user_id, first_name, bet) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET bet = $3`;
+    const values = [userId, firstName, bet];
     await pool.query(query, values).catch((err) =>
         setImmediate(() => {
             throw err;
@@ -78,6 +82,17 @@ export const getStatsForUser = async (userId: number) => {
         }),
     );
     return result.rows[0];
+};
+
+export const getEntriesForUser = async (userId: number) => {
+    const query = `SELECT amount, timestamp FROM ski_entries WHERE user_id = $1 ORDER BY timestamp DESC`;
+    const values = [userId];
+    const result = await pool.query(query, values).catch((err) =>
+        setImmediate(() => {
+            throw err;
+        }),
+    );
+    return result.rows;
 };
 
 type StatisticItem = {

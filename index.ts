@@ -1,6 +1,7 @@
 import { Context, Scenes, Telegraf } from 'telegraf';
 import { betWizard, skiRecordWizard } from './scenes';
 
+import { createSkiChart } from './grapher';
 import { fi } from 'date-fns/locale';
 import { formatDistance } from 'date-fns';
 
@@ -46,10 +47,11 @@ bot.use(new LocalSession().middleware());
 
 // set the commands so it's easier to discover the bot's functionality
 bot.telegram.setMyCommands([
-    { command: 'latua', description: 'Lisää uusi rykäsy' },
-    { command: 'stats', description: 'Katso tilastot' },
+    { command: 'analyysi', description: 'Katso omat hiihdot' },
     { command: 'betti', description: 'Aseta betti' },
     { command: 'help', description: 'Apua' },
+    { command: 'latua', description: 'Lisää uusi rykäsy' },
+    { command: 'stats', description: 'Katso tilastot' },
 ]);
 
 const statsReply = async (ctx: Context) => {
@@ -113,9 +115,63 @@ bot.command('betti', async (ctx) => {
     ctx.scene.enter('BET_WIZARD');
 });
 
+// user-specific graph!
+bot.command('analyysi', async (ctx) => {
+    const skiEntries = await db.getEntriesForUser(ctx.message.from.id);
+    const bet = await db.getBet(ctx.message.from.id);
+    if (skiEntries.length === 0) {
+        ctx.reply('Ei hiihtoja vielä');
+        return;
+    }
+    const imageBuffer = await createSkiChart(skiEntries, deadLineDate, bet);
+
+    const captionTextMultiline =
+        `${ctx.message.from.first_name}, tässä sun hiihdot\n\n` +
+        // calculate skied amount in last 7 days, if there are entries
+        (skiEntries.length > 0
+            ? `Viimeisen 7 päivän hiihdot: ${skiEntries
+                  .filter((entry) => {
+                      const now = new Date();
+                      const lastWeek = new Date();
+                      lastWeek.setDate(now.getDate() - 7);
+                      return Date.parse(entry.timestamp) > lastWeek.getTime();
+                  })
+                  .reduce((acc, entry) => acc + entry.amount, 0)}km\n`
+            : '') +
+        // calculate skied amount in last 30 days, if there are entries
+        (skiEntries.length > 0
+            ? `Viimeisen 30 päivän hiihdot: ${skiEntries
+                  .filter((entry) => {
+                      const now = new Date();
+                      const lastMonth = new Date();
+                      lastMonth.setDate(now.getDate() - 30);
+                      return Date.parse(entry.timestamp) > lastMonth.getTime();
+                  })
+                  .reduce((acc, entry) => acc + entry.amount, 0)}km\n`
+            : '') +
+        // end the message with cheering for the user
+        `\nHyvin menee!`;
+
+    ctx.replyWithPhoto(
+        { source: imageBuffer },
+        {
+            caption: captionTextMultiline,
+            disable_notification: true,
+        },
+    );
+});
+
 // get the generic stats list
 bot.command('stats', async (ctx) => {
     ctx.replyWithHTML(await statsReply(ctx));
+});
+
+// global error handler :)
+bot.catch((err, ctx) => {
+    console.error(`Error encountered for ${ctx.updateType}`, err);
+
+    // Respond to the user with a generic message
+    ctx.reply('Hups! Bitti meni vinoon. Ping ATK-jaosto');
 });
 
 bot.launch();
