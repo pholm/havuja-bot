@@ -95,7 +95,7 @@ bot.use(stage.middleware());
 // Register the logging middleware
 bot.use((ctx, next) => {
     // guard if the message has text
-    if ('text' in ctx.message) {
+    if (ctx.message && 'text' in ctx.message) {
         console.log(`${ctx.from.first_name}: ${ctx.message.text}`);
     }
     return next();
@@ -127,7 +127,6 @@ bot.command('analyysi', async (ctx) => {
 
     const captionTextMultiline =
         `${ctx.message.from.first_name}, tässä sun hiihdot\n\n` +
-        // calculate skied amount in last 7 days, if there are entries
         (skiEntries.length > 0
             ? `Viimeisen 7 päivän hiihdot: ${skiEntries
                   .filter((entry) => {
@@ -138,7 +137,6 @@ bot.command('analyysi', async (ctx) => {
                   })
                   .reduce((acc, entry) => acc + entry.amount, 0)}km\n`
             : '') +
-        // calculate skied amount in last 30 days, if there are entries
         (skiEntries.length > 0
             ? `Viimeisen 30 päivän hiihdot: ${skiEntries
                   .filter((entry) => {
@@ -149,7 +147,6 @@ bot.command('analyysi', async (ctx) => {
                   })
                   .reduce((acc, entry) => acc + entry.amount, 0)}km\n`
             : '') +
-        // end the message with cheering for the user
         `\nHyvin menee!`;
 
     ctx.replyWithPhoto(
