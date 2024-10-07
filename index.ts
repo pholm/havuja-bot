@@ -135,7 +135,8 @@ bot.command('analyysi', async (ctx) => {
                       lastWeek.setDate(now.getDate() - 7);
                       return Date.parse(entry.timestamp) > lastWeek.getTime();
                   })
-                  .reduce((acc, entry) => acc + entry.amount, 0)}km\n`
+                  .reduce((acc, entry) => acc + entry.amount, 0)
+                  .toFixed(2)}km\n`
             : '') +
         (skiEntries.length > 0
             ? `Viimeisen 30 päivän hiihdot: ${skiEntries
@@ -145,7 +146,8 @@ bot.command('analyysi', async (ctx) => {
                       lastMonth.setDate(now.getDate() - 30);
                       return Date.parse(entry.timestamp) > lastMonth.getTime();
                   })
-                  .reduce((acc, entry) => acc + entry.amount, 0)}km\n`
+                  .reduce((acc, entry) => acc + entry.amount, 0)
+                  .toFixed(2)}km\n`
             : '') +
         `\nHyvin menee!`;
 
