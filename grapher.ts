@@ -117,7 +117,6 @@ export const createSkiChart = async (
 
     const chartUrl = chart.getUrl();
 
-    console.log('chartUrl', chartUrl);
     return new Promise((resolve, reject) => {
         https
             .get(chartUrl, (response: IncomingMessage) => {

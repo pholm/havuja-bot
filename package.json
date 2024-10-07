@@ -15,6 +15,7 @@
     },
     "dependencies": {
         "chartjs": "^0.3.24",
+        "cron": "^3.1.7",
         "date-fns": "^3.6.0",
         "pg": "^8.7.1",
         "quickchart-js": "^3.1.3",

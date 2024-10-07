@@ -9,6 +9,13 @@ const pool = new Pool({
 
 pool.connect().catch((e) => console.error(e.stack));
 
+type StatisticItem = {
+    amount: number;
+    first_name: string;
+    timestamp: string;
+    bet: number;
+};
+
 const createUser = async (userId: number, firstName: string) => {
     const query = `INSERT INTO users (user_id, first_name) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET first_name = $2`;
     const values = [userId, firstName];
@@ -95,11 +102,18 @@ export const getEntriesForUser = async (userId: number) => {
     return result.rows;
 };
 
-type StatisticItem = {
-    amount: number;
-    first_name: string;
-    timestamp: string;
-    bet: number;
+export const getEntriesForLastWeek = async () => {
+    const query = `SELECT SUM(ski_entries.amount), users.first_name FROM ski_entries, users 
+                    WHERE ski_entries.user_id = users.user_id AND ski_entries.timestamp > NOW() - INTERVAL '7 days' 
+                    GROUP BY users.first_name
+                    ORDER BY SUM(ski_entries.amount) DESC`;
+
+    const result = await pool.query(query).catch((err) =>
+        setImmediate(() => {
+            throw err;
+        }),
+    );
+    return result.rows;
 };
 
 export const getStatistics: () => Promise<StatisticItem[]> = async () => {

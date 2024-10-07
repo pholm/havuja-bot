@@ -2,6 +2,7 @@ import { Context, Scenes, Telegraf } from 'telegraf';
 import { betWizard, skiRecordWizard } from './scenes';
 
 import { createSkiChart } from './grapher';
+import cron from './weekly';
 import { fi } from 'date-fns/locale';
 import { formatDistance } from 'date-fns';
 
@@ -40,7 +41,7 @@ const timeUntilDeadLineString: () => string = () => {
     } päivää!`;
 };
 
-const bot = new Telegraf<BotContext>(process.env.BOT_TOKEN);
+export const bot = new Telegraf<BotContext>(process.env.BOT_TOKEN);
 
 // register the session middleware; required for scenes to work
 bot.use(new LocalSession().middleware());
@@ -103,7 +104,7 @@ bot.use((ctx, next) => {
 
 // The necessary base commands
 bot.start((ctx) => ctx.reply('Se on raaka peli'));
-bot.help((ctx) => ctx.reply('Kannattaa jo suunnata Alkoon'));
+bot.help((ctx) => ctx.reply('Lehviltä skiergo lainaksi?'));
 
 // handle the command for adding a new record
 bot.command('latua', async (ctx) => {
@@ -174,5 +175,8 @@ bot.catch((err, ctx) => {
 });
 
 bot.launch();
+
+// start the cron job for weekly report
+cron();
 
 console.log('Initialization ready');
