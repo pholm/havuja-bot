@@ -12,13 +12,18 @@ pool.connect().catch((e) => console.error(e.stack));
 type StatisticItem = {
     amount: number;
     first_name: string;
+    last_name: string;
     timestamp: string;
     bet: number;
 };
 
-const createUser = async (userId: number, firstName: string) => {
-    const query = `INSERT INTO users (user_id, first_name) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET first_name = $2`;
-    const values = [userId, firstName];
+const createUser = async (
+    userId: number,
+    firstName: string,
+    lastName: string,
+) => {
+    const query = `INSERT INTO users (user_id, first_name, last_name) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET first_name = $2 AND last_name = $3`;
+    const values = [userId, firstName, lastName];
     await pool
         .query(query, values)
         .then((res) => console.log(res.rows[0]))
@@ -33,11 +38,12 @@ const createUser = async (userId: number, firstName: string) => {
 export const writeRecordToDb = async (
     userId: number,
     firstName: string,
+    lastName: string,
     timestamp: Date,
     amount: number,
 ) => {
     // create user if not exists
-    await createUser(userId, firstName);
+    await createUser(userId, firstName, lastName);
     const query = `INSERT INTO ski_entries (user_id, timestamp, amount) VALUES ($1, $2, $3)`;
     const values = [userId, timestamp, amount];
     await pool.query(query, values).catch((err) =>
@@ -65,12 +71,13 @@ export const getBet = async (userId: number) => {
 export const setBet = async (
     userId: number,
     firstName: string,
+    lastName: string,
     bet: number,
 ) => {
     console.log('bet in db', bet);
     // this neatly handles both insert and update, as well as creates the user if it does not exist!
-    const query = `INSERT INTO users (user_id, first_name, bet) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET bet = $3`;
-    const values = [userId, firstName, bet];
+    const query = `INSERT INTO users (user_id, first_name, last_name, bet) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET bet = $4`;
+    const values = [userId, firstName, lastName, bet];
     await pool.query(query, values).catch((err) =>
         setImmediate(() => {
             throw err;
@@ -134,6 +141,7 @@ export const initializeDb = async () => {
     const createUsersTable = `CREATE TABLE IF NOT EXISTS users (
         user_id BIGINT PRIMARY KEY,
         first_name VARCHAR(255) NOT NULL,
+        last_name VARCHAR(255) DEFAULT NULL,
         bet FLOAT DEFAULT NULL
     )`;
     await pool.query(createUsersTable).catch((err) =>

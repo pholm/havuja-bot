@@ -42,7 +42,7 @@ const sendScheduledMessages = async () => {
 };
 
 const job = new CronJob(
-    // cron every minute
+    // cron every minute for debugging
     '* * * * *',
     // cron every sunday at 21:00
     // '0 21 * * 0',

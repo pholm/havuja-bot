@@ -58,6 +58,7 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
             await db.writeRecordToDb(
                 ctx.message.from.id,
                 ctx.message.from.first_name,
+                ctx.message.from.last_name,
                 new Date(),
                 kmRounded,
             );
@@ -124,6 +125,7 @@ export const betWizard = new Scenes.WizardScene<MyWizardContext>(
             await db.setBet(
                 ctx.message.from.id,
                 ctx.message.from.first_name,
+                ctx.message.from.last_name,
                 bet,
             );
             await ctx.replyWithPhoto(
