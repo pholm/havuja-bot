@@ -44,7 +44,7 @@ const sendScheduledMessages = async () => {
             0,
         );
         reportMessage += `\n\nYhteensä: ${total.toFixed(2)}km`;
-        reportMessage += '\n\nLiukkaita latuja!';
+        reportMessage += '\nLiukkaita latuja!';
 
         await bot.telegram.sendMessage(process.env.CHAT_ID, reportMessage, {
             parse_mode: 'HTML',
@@ -55,7 +55,8 @@ const sendScheduledMessages = async () => {
 };
 
 const job = new CronJob(
-    '* * * * *', // cron every minute for debugging
+    // every Sunday at 21:00
+    '0 21 * * 0',
     async () => {
         await sendScheduledMessages();
     },
