@@ -12,12 +12,6 @@ import db = require('./db');
 
 db.initializeDb();
 
-// TODO: write middleware to check if the chat is valid
-const validChatId = (chatId) => {
-    return true;
-    // return chatId === -416691354
-};
-
 const deadLineDate = new Date(2025, 4, 1); // until May Day 2025. months start indexing from 0 :)
 
 export type BotContext = Context & Scenes.SceneContext;
@@ -69,11 +63,14 @@ const statsReply = async (ctx: Context) => {
             },
         );
 
-        const betPercentage = ((entry.amount / entry.bet) * 100).toFixed(1);
+        const betPercentage = (entry.amount / entry.bet) * 100;
+        const percentageRounded = ((entry.amount / entry.bet) * 100).toFixed(1);
 
         return `<b>${entry.nickname} - ${String(entry.amount.toFixed(2))}/${
             entry.bet
-        }km (${betPercentage}%)</b>\nedellinen ${agoString}\n\n`;
+        }km (${percentageRounded}%) ${
+            betPercentage > 100 ? '🎉' : null
+        }</b>\nedellinen ${agoString}\n\n`;
     });
 
     return `
@@ -104,8 +101,20 @@ bot.use((ctx, next) => {
     return next();
 });
 
-// The necessary base commands
-bot.start((ctx) => ctx.reply('Se on raaka peli'));
+// Register the chat ID middleware
+bot.use((ctx, next) => {
+    // check that chat ID is the same as in the .env file
+    // for production
+    /*    
+    if (ctx.chat.id !== parseInt(process.env.CHAT_ID)) {
+        ctx.reply('Laitappa viestit HIIHTO_RINKIIN');
+        return;
+    }
+    */
+
+    return next();
+});
+
 bot.help((ctx) => ctx.reply('Lehviltä skiergo lainaksi?'));
 
 // handle the command for adding a new record
@@ -177,13 +186,13 @@ bot.command('stats', async (ctx) => {
 bot.catch((err, ctx) => {
     console.error(`Error encountered for ${ctx.updateType}`, err);
 
-    // Respond to the user with a generic message
+    // Respond to the user with a generic error message
     ctx.reply('Hups! Bitti meni vinoon. Ping ATK-jaosto');
 });
 
 bot.launch();
 
-// start the cron job for weekly report
+// start the cron job for the weekly report
 cron();
 
 console.log('Initialization ready');
