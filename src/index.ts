@@ -1,46 +1,52 @@
 import { Context, Scenes, Telegraf } from 'telegraf';
 import { betWizard, nicknameWizard, skiRecordWizard } from './scenes';
+import { differenceInDays, differenceInMonths, formatDistance } from 'date-fns';
+import { getBet, getEntriesForUser, getStatistics, initializeDb } from './db';
 
 import { createSkiChart } from './grapher';
 import cron from './weekly';
 import { fi } from 'date-fns/locale';
-import { formatDistance } from 'date-fns';
 
 import LocalSession = require('telegraf-session-local');
 
-import db = require('./db');
+// Initialize the database
+initializeDb();
 
-db.initializeDb();
+// Define deadline date (May 1, 2025)
+const deadLineDate = new Date(2025, 4, 1);
 
-const deadLineDate = new Date(2025, 4, 1); // until May Day 2025. months start indexing from 0 :)
-
+// Define BotContext type
 export type BotContext = Context & Scenes.SceneContext;
 
-interface DeadLineObject {
-    months: number;
-    days: number;
-}
+// Helper function for pluralization
+const pluralize = (count: number, singular: string, plural: string): string => {
+    return `${count} ${count === 1 ? singular : plural}`;
+};
 
-const timeUntilDeadLine = (): DeadLineObject => {
+// Function to generate a string representing the time until the deadline
+const timeUntilDeadLineString = (): string => {
     const now = new Date();
-    const diff = deadLineDate.getTime() - now.getTime();
-    const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24)) % 30;
-    return { months, days };
+    const months = differenceInMonths(deadLineDate, now);
+    const days = differenceInDays(deadLineDate, now) % 30;
+
+    if (months < 0) {
+        return 'Wabu ei lobu';
+    }
+
+    return `Aikaa Wappuun ${pluralize(
+        months,
+        'kuukausi',
+        'kuukautta',
+    )} ja ${pluralize(days, 'päivä', 'päivää')}!`;
 };
 
-const timeUntilDeadLineString: () => string = () => {
-    return `Aikaa Wappuun ${timeUntilDeadLine().months} kuukautta ja ${
-        timeUntilDeadLine().days
-    } päivää!`;
-};
-
+// Create a new Telegraf bot instance
 export const bot = new Telegraf<BotContext>(process.env.BOT_TOKEN);
 
-// register the session middleware; required for scenes to work
+// Register session middleware
 bot.use(new LocalSession().middleware());
 
-// set the commands so it's easier to discover the bot's functionality
+// Set bot commands
 bot.telegram.setMyCommands([
     { command: 'analyysi', description: 'Katso omat hiihdot' },
     { command: 'betti', description: 'Aseta betti' },
@@ -50,8 +56,9 @@ bot.telegram.setMyCommands([
     { command: 'stats', description: 'Katso tilastot' },
 ]);
 
+// Function to generate stats reply
 const statsReply = async (ctx: Context) => {
-    const userListWithScores = await db.getStatistics();
+    const userListWithScores = await getStatistics(); // Updated function call
 
     const retString: string[] = userListWithScores.map((entry) => {
         const agoString = formatDistance(
@@ -64,12 +71,12 @@ const statsReply = async (ctx: Context) => {
         );
 
         const betPercentage = (entry.amount / entry.bet) * 100;
-        const percentageRounded = ((entry.amount / entry.bet) * 100).toFixed(1);
+        const percentageRounded = betPercentage.toFixed(1);
 
-        return `<b>${entry.nickname} - ${String(entry.amount.toFixed(2))}/${
+        return `<b>${entry.nickname} - ${entry.amount.toFixed(2)}/${
             entry.bet
         }km (${percentageRounded}%) ${
-            betPercentage > 100 ? '🎉' : null
+            betPercentage > 100 ? '🎉' : ''
         }</b>\nedellinen ${agoString}\n\n`;
     });
 
@@ -78,121 +85,111 @@ Nonii, katellaas vähä paljo peli
 
 ${retString.join('')}
 ${timeUntilDeadLineString()}
-
 `;
 };
 
-// Stage initialization
+// Initialize scenes
 const stage = new Scenes.Stage<Scenes.WizardContext>([
     skiRecordWizard,
     betWizard,
     nicknameWizard,
 ]);
 
-// Register the stage middleware
+// Register stage middleware
 bot.use(stage.middleware());
 
-// Register the logging middleware
+// Register logging middleware
 bot.use((ctx, next) => {
-    // guard if the message has text
     if (ctx.message && 'text' in ctx.message) {
         console.log(`${ctx.from.first_name}: ${ctx.message.text}`);
     }
     return next();
 });
 
-// Register the chat ID middleware
-bot.use((ctx, next) => {
-    // check that chat ID is the same as in the .env file
-    // for production
-    /*    
-    if (ctx.chat.id !== parseInt(process.env.CHAT_ID)) {
-        ctx.reply('Laitappa viestit HIIHTO_RINKIIN');
-        return;
-    }
-    */
-
-    return next();
-});
+// Register chat ID middleware (commented out for testing)
+// bot.use((ctx, next) => {
+//     if (ctx.chat.id !== parseInt(process.env.CHAT_ID)) {
+//         ctx.reply('Laitappa viestit HIIHTO_RINKIIN');
+//         return;
+//     }
+//     return next();
+// });
 
 bot.help((ctx) => ctx.reply('Lehviltä skiergo lainaksi?'));
 
-// handle the command for adding a new record
+// Handle command for adding a new record
 bot.command('latua', async (ctx) => {
     ctx.scene.enter('SKIED_RECORD_WIZARD');
 });
 
-// handle the command for setting the bet
+// Handle command for setting the bet
 bot.command('betti', async (ctx) => {
     ctx.scene.enter('BET_WIZARD');
 });
 
-// handle the command for changing the nickname
+// Handle command for changing the nickname
 bot.command('kutsumua', async (ctx) => {
     ctx.scene.enter('NICKNAME_WIZARD');
 });
 
-// user-specific graph!
+// User-specific graph command
 bot.command('analyysi', async (ctx) => {
-    const skiEntries = await db.getEntriesForUser(ctx.message.from.id);
-    const bet = await db.getBet(ctx.message.from.id);
+    const skiEntries = await getEntriesForUser(ctx.message.from.id);
+    const bet = await getBet(ctx.message.from.id);
+
     if (skiEntries.length === 0) {
         ctx.reply('Ei hiihtoja vielä');
         return;
     }
-    const imageBuffer = await createSkiChart(skiEntries, deadLineDate, bet);
 
-    const captionTextMultiline =
-        `${ctx.message.from.first_name}, tässä sun hiihdot\n\n` +
-        (skiEntries.length > 0
-            ? `Viimeisen 7 päivän hiihdot: ${skiEntries
-                  .filter((entry) => {
-                      const now = new Date();
-                      const lastWeek = new Date();
-                      lastWeek.setDate(now.getDate() - 7);
-                      return Date.parse(entry.timestamp) > lastWeek.getTime();
-                  })
-                  .reduce((acc, entry) => acc + entry.amount, 0)
-                  .toFixed(2)}km\n`
-            : '') +
-        (skiEntries.length > 0
-            ? `Viimeisen 30 päivän hiihdot: ${skiEntries
-                  .filter((entry) => {
-                      const now = new Date();
-                      const lastMonth = new Date();
-                      lastMonth.setDate(now.getDate() - 30);
-                      return Date.parse(entry.timestamp) > lastMonth.getTime();
-                  })
-                  .reduce((acc, entry) => acc + entry.amount, 0)
-                  .toFixed(2)}km\n`
-            : '') +
-        `\nHyvin menee!`;
+    const imageBuffer = await createSkiChart(skiEntries, deadLineDate, bet);
+    const totalLastWeek = skiEntries
+        .filter((entry) => {
+            const lastWeek = new Date();
+            lastWeek.setDate(lastWeek.getDate() - 7);
+            return Date.parse(entry.timestamp) > lastWeek.getTime();
+        })
+        .reduce((acc, entry) => acc + entry.amount, 0)
+        .toFixed(2);
+
+    const totalLastMonth = skiEntries
+        .filter((entry) => {
+            const lastMonth = new Date();
+            lastMonth.setDate(lastMonth.getDate() - 30);
+            return Date.parse(entry.timestamp) > lastMonth.getTime();
+        })
+        .reduce((acc, entry) => acc + entry.amount, 0)
+        .toFixed(2);
+
+    const captionTextMultiline = `
+${ctx.message.from.first_name}, tässä sun hiihdot
+
+Viimeisen 7 päivän hiihdot: ${totalLastWeek}km
+Viimeisen 30 päivän hiihdot: ${totalLastMonth}km
+
+Hyvin menee!`;
 
     ctx.replyWithPhoto(
         { source: imageBuffer },
-        {
-            caption: captionTextMultiline,
-            disable_notification: true,
-        },
+        { caption: captionTextMultiline, disable_notification: true },
     );
 });
 
-// get the generic stats list
+// Command for getting generic stats
 bot.command('stats', async (ctx) => {
     ctx.replyWithHTML(await statsReply(ctx));
 });
 
-// global error handler :)
+// Global error handler
 bot.catch((err, ctx) => {
     console.error(`Error encountered for ${ctx.updateType}`, err);
-
-    // Respond to the user with a generic error message
     ctx.reply('Hups! Bitti meni vinoon. Ping ATK-jaosto');
 });
 
+// Launch the bot
 bot.launch();
 
-// start the cron job for the weekly report
+// Start the cron job for the weekly report
 cron();
 
 console.log('Initialization ready');
