@@ -138,3 +138,37 @@ export const betWizard = new Scenes.WizardScene<MyWizardContext>(
         return ctx.scene.leave();
     },
 );
+
+export const nicknameWizard = new Scenes.WizardScene<MyWizardContext>(
+    'NICKNAME_WIZARD',
+    (ctx) => {
+        ctx.reply('Anna uusi lempinimi', {
+            reply_markup: {
+                input_field_placeholder: 'Hessu',
+                // force the user to reply to the bot
+                force_reply: true,
+            },
+        });
+
+        return ctx.wizard.next();
+    },
+    async (ctx) => {
+        // guard to check if the chat is valid
+        if (!('text' in ctx.message)) {
+            ctx.reply('Vastaa nyt järkevästi');
+            return ctx.scene.reenter();
+        }
+
+        const nickname = ctx.message.text;
+
+        const result = await db.setNickname(ctx.message.from.id, nickname);
+
+        await ctx.reply(`Lempinimesi on nyt ${nickname}`, {
+            reply_markup: {
+                remove_keyboard: true,
+            },
+        });
+
+        return ctx.scene.leave();
+    },
+);

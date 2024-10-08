@@ -1,4 +1,4 @@
-import { bot } from './index';
+import { bot } from '.';
 import { getEntriesForLastWeek } from './db';
 
 const CronJob = require('cron').CronJob;
@@ -16,7 +16,7 @@ const sendScheduledMessages = async () => {
         .slice(0, 3)
         .map((entry, index) => {
             const medal = ['🥇', '🥈', '🥉'][index];
-            return `${medal} ${entry.first_name} - ${entry.sum.toFixed(2)}km`;
+            return `${medal} ${entry.nickname} - ${entry.sum.toFixed(2)}km`;
         })
         .join('\n');
 
@@ -25,7 +25,7 @@ const sendScheduledMessages = async () => {
         reportMessage += '\n\n';
         reportMessage += entriesForLastWeek
             .slice(3)
-            .map((entry) => `${entry.first_name} - ${entry.sum.toFixed(2)}km`)
+            .map((entry) => `${entry.nickname} - ${entry.sum.toFixed(2)}km`)
             .join('\n');
     }
     // add the total

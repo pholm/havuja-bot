@@ -1,5 +1,5 @@
 import { Context, Scenes, Telegraf } from 'telegraf';
-import { betWizard, skiRecordWizard } from './scenes';
+import { betWizard, nicknameWizard, skiRecordWizard } from './scenes';
 
 import { createSkiChart } from './grapher';
 import cron from './weekly';
@@ -52,6 +52,7 @@ bot.telegram.setMyCommands([
     { command: 'betti', description: 'Aseta betti' },
     { command: 'help', description: 'Apua' },
     { command: 'latua', description: 'Lisää uusi rykäsy' },
+    { command: 'kutsumua', description: 'Vaihda lempinimi' },
     { command: 'stats', description: 'Katso tilastot' },
 ]);
 
@@ -70,7 +71,7 @@ const statsReply = async (ctx: Context) => {
 
         const betPercentage = ((entry.amount / entry.bet) * 100).toFixed(1);
 
-        return `<b>${entry.first_name} - ${String(entry.amount.toFixed(2))}/${
+        return `<b>${entry.nickname} - ${String(entry.amount.toFixed(2))}/${
             entry.bet
         }km (${betPercentage}%)</b>\nedellinen ${agoString}\n\n`;
     });
@@ -88,6 +89,7 @@ ${timeUntilDeadLineString()}
 const stage = new Scenes.Stage<Scenes.WizardContext>([
     skiRecordWizard,
     betWizard,
+    nicknameWizard,
 ]);
 
 // Register the stage middleware
@@ -114,6 +116,11 @@ bot.command('latua', async (ctx) => {
 // handle the command for setting the bet
 bot.command('betti', async (ctx) => {
     ctx.scene.enter('BET_WIZARD');
+});
+
+// handle the command for changing the nickname
+bot.command('kutsumua', async (ctx) => {
+    ctx.scene.enter('NICKNAME_WIZARD');
 });
 
 // user-specific graph!
