@@ -33,11 +33,6 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
         // Add the command message ID to the list of messages to delete
         ctx.scene.session.messagesToDelete.push(ctx.message.message_id);
 
-        console.log(
-            ' list of messages to delete',
-            ctx.scene.session.messagesToDelete,
-        );
-
         const reply = await ctx.reply('Ok, laitappas vielä ne kilometrit', {
             reply_markup: {
                 input_field_placeholder: '12.3',
@@ -54,7 +49,8 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
             const reply = await ctx.reply('Vastaa nyt järkevästi');
             ctx.scene.session.messagesToDelete.push(reply.message_id);
             // return to the first step
-            return ctx.wizard.selectStep(0);
+            ctx.wizard.selectStep(0);
+            return ctx.wizard.step(ctx);
         }
 
         const kilometers = parseFloat(ctx.message.text.replace(',', '.'));
@@ -63,15 +59,11 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
         if (isNaN(kmRounded)) {
             const reply = await ctx.reply(
                 'Syötä kilometrit muodossa 100,0 tai 100.0',
-                {
-                    reply_markup: {
-                        remove_keyboard: true,
-                    },
-                },
             );
             ctx.scene.session.messagesToDelete.push(reply.message_id);
             // return to the first step
-            return ctx.wizard.selectStep(0);
+            ctx.wizard.selectStep(0);
+            return ctx.wizard.step(ctx);
         } else {
             const result = await db.writeRecordToDb(
                 ctx.message.from.id,
@@ -88,7 +80,8 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
                     },
                 });
 
-                await new Promise((resolve) => setTimeout(resolve, 1000));
+                // wait for 2 seconds before deleting the messages
+                await new Promise((resolve) => setTimeout(resolve, 2000));
 
                 // delete all messages regarding the recording to avoid spam
                 ctx.scene.session.messagesToDelete.forEach(
@@ -98,8 +91,12 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
                 );
                 await ctx.deleteMessage(ctx.message.message_id);
             } else {
-                ctx.reply('Jokin meni pieleen, yritä uudelleen.');
-                return ctx.scene.reenter();
+                const reply = await ctx.reply(
+                    'Jokin meni pieleen, yritä uudelleen.',
+                );
+                ctx.scene.session.messagesToDelete.push(reply.message_id);
+                ctx.wizard.selectStep(0);
+                return ctx.wizard.step(ctx);
             }
         }
         return ctx.scene.leave();
