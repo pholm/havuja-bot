@@ -2,8 +2,13 @@ import { BotContext } from '.';
 import { Scenes } from 'telegraf';
 import db = require('./db');
 
+interface MyWizardSession extends Scenes.WizardSessionData {
+    messagesToDelete?: number[];
+}
+
 interface MyWizardContext extends Scenes.WizardContext {
     wizard: any;
+    scene: Scenes.SceneContextScene<MyWizardContext, MyWizardSession>;
 }
 
 const cheersReply = async (ctx: BotContext, kmRounded: number) => {
@@ -17,11 +22,22 @@ Hyvä homma ${
                 `;
 };
 
-let replyMessageId: number;
-
 export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
     'SKIED_RECORD_WIZARD',
     async (ctx) => {
+        // Ensure the array is initialized only once
+        if (!ctx.scene.session.messagesToDelete) {
+            ctx.scene.session.messagesToDelete = [];
+        }
+
+        // Add the command message ID to the list of messages to delete
+        ctx.scene.session.messagesToDelete.push(ctx.message.message_id);
+
+        console.log(
+            ' list of messages to delete',
+            ctx.scene.session.messagesToDelete,
+        );
+
         const reply = await ctx.reply('Ok, laitappas vielä ne kilometrit', {
             reply_markup: {
                 input_field_placeholder: '12.3',
@@ -30,25 +46,32 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
             },
         });
 
-        replyMessageId = reply.message_id;
+        ctx.scene.session.messagesToDelete.push(reply.message_id);
         return ctx.wizard.next();
     },
     async (ctx) => {
         if (!('text' in ctx.message)) {
-            ctx.reply('Vastaa nyt järkevästi');
-            return ctx.scene.reenter();
+            const reply = await ctx.reply('Vastaa nyt järkevästi');
+            ctx.scene.session.messagesToDelete.push(reply.message_id);
+            // return to the first step
+            return ctx.wizard.selectStep(0);
         }
 
         const kilometers = parseFloat(ctx.message.text.replace(',', '.'));
         const kmRounded = Math.round(kilometers * 100) / 100;
 
         if (isNaN(kmRounded)) {
-            ctx.reply('Syötä kilometrit muodossa 100,0 tai 100.0', {
-                reply_markup: {
-                    remove_keyboard: true,
+            const reply = await ctx.reply(
+                'Syötä kilometrit muodossa 100,0 tai 100.0',
+                {
+                    reply_markup: {
+                        remove_keyboard: true,
+                    },
                 },
-            });
-            return ctx.scene.reenter();
+            );
+            ctx.scene.session.messagesToDelete.push(reply.message_id);
+            // return to the first step
+            return ctx.wizard.selectStep(0);
         } else {
             const result = await db.writeRecordToDb(
                 ctx.message.from.id,
@@ -67,7 +90,12 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
 
                 await new Promise((resolve) => setTimeout(resolve, 1000));
 
-                await ctx.deleteMessage(replyMessageId);
+                // delete all messages regarding the recording to avoid spam
+                ctx.scene.session.messagesToDelete.forEach(
+                    async (messageToDelete) => {
+                        await ctx.deleteMessage(messageToDelete);
+                    },
+                );
                 await ctx.deleteMessage(ctx.message.message_id);
             } else {
                 ctx.reply('Jokin meni pieleen, yritä uudelleen.');
