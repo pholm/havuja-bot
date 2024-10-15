@@ -7,7 +7,7 @@ import { createSkiChart } from './grapher';
 import cron from './weekly';
 import { fi } from 'date-fns/locale';
 
-import LocalSession = require('telegraf-session-local');
+const LocalSession = require('telegraf-session-local');
 
 // Initialize the database
 initializeDb();
