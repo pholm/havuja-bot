@@ -15,19 +15,4 @@ services:
             - 8081:8081
         volumes:
             - .:/code
-        depends_on:
-            - pg
-        env_file:
-            - .env
         restart: always
-    pg:
-        image: postgres:alpine
-        restart: always
-        volumes:
-            - postgresvolume01:/var/lib/postgresql/data
-        env_file:
-            - .env
-
-volumes:
-    postgresvolume01:
-        driver: local
