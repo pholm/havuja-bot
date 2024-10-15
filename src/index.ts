@@ -109,8 +109,10 @@ bot.use((ctx, next) => {
 // Register chat ID middleware (commented out for testing)
 bot.use((ctx, next) => {
     if (ctx.chat.id !== parseInt(process.env.CHAT_ID)) {
-        ctx.reply('Laitappa viestit HIIHTO_RINKIIN');
-        return;
+        console.log(ctx.chat.id);
+        // ctx.reply('Laitappa viestit HIIHTO_RINKIIN');
+        // return;
+        return next();
     }
     return next();
 });
