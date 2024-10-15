@@ -2,15 +2,7 @@ services:
     worker:
         build:
             context: .
-            dockerfile_inline: |
-                FROM node:alpine
-                RUN apk add --no-cache git
-                WORKDIR /usr/havujabot
-                COPY package.json .
-                COPY package-lock.json .
-                RUN npm ci
-                COPY . .
-                RUN npm run build
+            dockerfile: Dockerfile
         ports:
             - 8081:8081
         volumes:
