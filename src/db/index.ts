@@ -100,8 +100,8 @@ export const setBet = async (
     lastName: string,
     bet: number,
 ): Promise<{ success: boolean; message: string }> => {
-    const query = `INSERT INTO users (user_id, first_name, last_name, bet) 
-                    VALUES ($1, $2, $3, $4) 
+    const query = `INSERT INTO users (user_id, first_name, last_name, bet, nickname) 
+                    VALUES ($1, $2, $3, $4, $2) 
                     ON CONFLICT (user_id) 
                     DO UPDATE SET bet = $4`;
     const values = [userId, firstName, lastName, bet];
