@@ -1,0 +1,35 @@
+services:
+    worker:
+        build:
+            context: .
+            dockerfile_inline: |
+                FROM node:alpine
+                RUN apk add --no-cache git
+                WORKDIR /usr/havujabot
+                COPY package.json .
+                COPY package-lock.json .
+                RUN npm i
+                COPY . .
+                CMD ["npm", "run", "dev"]
+        ports:
+            - 8081:8081
+        volumes:
+            - .:/usr/havujabot
+        depends_on:
+            - pg
+        env_file:
+            - .env
+        restart: always
+    pg:
+        image: postgres:alpine
+        restart: always
+        volumes:
+            - postgresvolume01:/var/lib/postgresql/data
+        env_file:
+            - .env
+        ## for local debugging
+        ports:
+            - '5432:5432'
+volumes:
+    postgresvolume01:
+        driver: local
