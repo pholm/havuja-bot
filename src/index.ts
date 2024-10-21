@@ -58,26 +58,31 @@ bot.telegram.setMyCommands([
 
 // Function to generate stats reply
 const statsReply = async (ctx: Context) => {
-    const userListWithScores = await getStatistics(); // Updated function call
+    const userListWithScores = await getStatistics();
 
     const retString: string[] = userListWithScores.map((entry) => {
-        const agoString = formatDistance(
-            Date.parse(entry.timestamp),
-            new Date(),
-            {
-                addSuffix: true,
-                locale: fi,
-            },
-        );
+        // Logic for generating the time ago string
+        // If there are no entries, the timestamp is undefined and we adjust the list item accordingly
+        let agoString = undefined;
+        if (entry.timestamp) {
+            agoString = formatDistance(
+                Date.parse(entry.timestamp),
+                new Date(),
+                {
+                    addSuffix: true,
+                    locale: fi,
+                },
+            );
+        }
 
         const betPercentage = (entry.amount / entry.bet) * 100;
         const percentageRounded = betPercentage.toFixed(1);
 
         return `<b>${entry.nickname} - ${entry.amount.toFixed(2)}/${
             entry.bet
-        }km (${percentageRounded}%) ${
-            betPercentage > 100 ? '🎉' : ''
-        }</b>\nedellinen ${agoString}\n\n`;
+        }km (${percentageRounded}%) ${betPercentage > 100 ? '🎉' : ''}</b>${
+            agoString ? `\nedellinen ${agoString}` : ''
+        }\n\n`;
     });
 
     return `

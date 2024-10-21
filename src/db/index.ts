@@ -169,11 +169,12 @@ export const getEntriesForLastWeek = async (): Promise<
 };
 
 export const getStatistics: () => Promise<StatisticItem[]> = async () => {
-    const query = `SELECT SUM(ski_entries.amount) as amount, users.nickname, MAX(ski_entries.timestamp) as timestamp, users.bet 
-                    FROM ski_entries, users
-                    WHERE users.user_id = ski_entries.user_id AND users.bet IS NOT NULL 
-                    GROUP BY users.user_id, users.bet 
-                    ORDER BY SUM(ski_entries.amount) DESC`;
+    const query = `SELECT COALESCE(SUM(ski_entries.amount), 0) as amount, users.nickname, MAX(ski_entries.timestamp) as timestamp, users.bet 
+                    FROM users
+                    LEFT JOIN ski_entries ON users.user_id = ski_entries.user_id
+                    WHERE users.bet IS NOT NULL 
+                    GROUP BY users.user_id, users.nickname, users.bet 
+                    ORDER BY amount DESC`;
 
     try {
         const result = await pool.query(query);
