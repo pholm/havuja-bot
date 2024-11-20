@@ -196,7 +196,7 @@ export const initializeDb = async (): Promise<void> => {
 
     const createEntriesTable = `CREATE TABLE IF NOT EXISTS ski_entries (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
+        user_id BIGINT NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
         timestamp TIMESTAMP NOT NULL,
         amount FLOAT NOT NULL
     )`;
