@@ -2,13 +2,22 @@ import { Pool } from 'pg';
 
 const pool = new Pool({
     host: process.env.POSTGRES_HOST,
-    port: process.env.POSTGRES_PORT,
+    port: parseInt(process.env.POSTGRES_PORT),
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DATABASE,
+    // recommended config
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
 });
 
 pool.connect().catch((e) => console.error(e.stack));
+
+// https://node-postgres.com/apis/pool#error
+pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+});
 
 type StatisticItem = {
     amount: number;

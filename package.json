@@ -6,7 +6,8 @@
     "license": "MIT",
     "devDependencies": {
         "@types/node": "^22.5.0",
-        "ts-node": "^10.9.2"
+        "ts-node": "^10.9.2",
+        "@types/pg": "^8.11.10"
     },
     "scripts": {
         "dev": "node -r ts-node/register --watch-path=src src/index.ts",
