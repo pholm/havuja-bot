@@ -37,7 +37,11 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
             reply_markup: {
                 input_field_placeholder: '12.3',
                 force_reply: true,
+                selective: true,
                 one_time_keyboard: true,
+            },
+            reply_parameters: {
+                message_id: ctx.message.message_id,
             },
         });
 
@@ -110,6 +114,10 @@ export const betWizard = new Scenes.WizardScene<MyWizardContext>(
             reply_markup: {
                 input_field_placeholder: '750',
                 force_reply: true,
+                selective: true,
+            },
+            reply_parameters: {
+                message_id: ctx.message.message_id,
             },
         });
         return ctx.wizard.next();
@@ -168,6 +176,10 @@ export const nicknameWizard = new Scenes.WizardScene<MyWizardContext>(
             reply_markup: {
                 input_field_placeholder: 'Hessu',
                 force_reply: true,
+                selective: true,
+            },
+            reply_parameters: {
+                message_id: ctx.message.message_id,
             },
         });
         return ctx.wizard.next();
