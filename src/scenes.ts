@@ -22,6 +22,14 @@ Hyvä homma ${
                 `;
 };
 
+const deleteMessageSafely = async (ctx: BotContext, messageId: number) => {
+    try {
+        await ctx.deleteMessage(messageId);
+    } catch (error) {
+        console.error('Error deleting message:', error);
+    }
+};
+
 export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
     'SKIED_RECORD_WIZARD',
     async (ctx) => {
@@ -90,10 +98,10 @@ export const skiRecordWizard = new Scenes.WizardScene<MyWizardContext>(
                 // delete all messages regarding the recording to avoid spam
                 ctx.scene.session.messagesToDelete.forEach(
                     async (messageToDelete) => {
-                        await ctx.deleteMessage(messageToDelete);
+                        await deleteMessageSafely(ctx, messageToDelete);
                     },
                 );
-                await ctx.deleteMessage(ctx.message.message_id);
+                await deleteMessageSafely(ctx, ctx.message.message_id);
             } else {
                 const reply = await ctx.reply(
                     'Jokin meni pieleen, yritä uudelleen.',
