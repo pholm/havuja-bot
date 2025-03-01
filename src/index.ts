@@ -27,7 +27,9 @@ const pluralize = (count: number, singular: string, plural: string): string => {
 const timeUntilDeadLineString = (): string => {
     const now = new Date();
     const months = differenceInMonths(deadLineDate, now);
-    const days = differenceInDays(deadLineDate, now) % 30;
+    const monthsDate = new Date(now);
+    monthsDate.setMonth(monthsDate.getMonth() + months);
+    const days = differenceInDays(deadLineDate, monthsDate);
 
     if (months < 0) {
         return 'Wabu ei lobu';
