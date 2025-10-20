@@ -12,8 +12,8 @@ const LocalSession = require('telegraf-session-local');
 // Initialize the database
 initializeDb();
 
-// Define deadline date (May 1, 2025)
-const deadLineDate = new Date(2025, 4, 1);
+// Define deadline date (May 1, 2026)
+const deadLineDate = new Date(2026, 4, 1);
 
 // Define BotContext type
 export type BotContext = Context & Scenes.SceneContext;
