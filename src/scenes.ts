@@ -12,12 +12,13 @@ interface MyWizardContext extends Scenes.WizardContext {
 }
 
 const cheersReply = async (ctx: BotContext, kmRounded: number) => {
+    const nickname = await db.getNickname(ctx.from.id);
     const stats = await db.getStatsForUser(ctx.from.id);
     return `
     Lisäsin sinulle ${kmRounded} kilometriä.
-    
+
 Hyvä homma ${
-        ctx.message.from.first_name
+        nickname || ctx.message.from.first_name
     }! Sinulla on nyt ${stats.amount.toFixed(2)} kilometriä kasassa.
                 `;
 };
@@ -162,10 +163,11 @@ export const betWizard = new Scenes.WizardScene<MyWizardContext>(
                 bet,
             );
             if (result.success) {
+                const nickname = await db.getNickname(ctx.message.from.id);
                 await ctx.replyWithPhoto(
                     { source: 'heinis.jpg' },
                     {
-                        caption: `💥 Erinomainen betti ${ctx.message.from.first_name}! 💥`,
+                        caption: `💥 Erinomainen betti ${nickname || ctx.message.from.first_name}! 💥`,
                     },
                 );
             } else {

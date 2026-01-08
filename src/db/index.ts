@@ -88,8 +88,8 @@ export const writeRecordToDb = async (
 };
 
 export const getBet = async (userId: number): Promise<number | null> => {
-    const query = `SELECT bet 
-                    FROM users 
+    const query = `SELECT bet
+                    FROM users
                     WHERE user_id = $1`;
     const values = [userId];
 
@@ -97,6 +97,22 @@ export const getBet = async (userId: number): Promise<number | null> => {
         const result = await pool.query(query, values);
         if (result.rows.length === 0) return null;
         return result.rows[0].bet;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+};
+
+export const getNickname = async (userId: number): Promise<string | null> => {
+    const query = `SELECT nickname
+                    FROM users
+                    WHERE user_id = $1`;
+    const values = [userId];
+
+    try {
+        const result = await pool.query(query, values);
+        if (result.rows.length === 0) return null;
+        return result.rows[0].nickname;
     } catch (err) {
         console.error(err);
         return null;

@@ -1,7 +1,13 @@
 import { Context, Scenes, Telegraf } from 'telegraf';
 import { betWizard, nicknameWizard, skiRecordWizard } from './scenes';
 import { differenceInDays, differenceInMonths, formatDistance } from 'date-fns';
-import { getBet, getEntriesForUser, getStatistics, initializeDb } from './db';
+import {
+    getBet,
+    getEntriesForUser,
+    getNickname,
+    getStatistics,
+    initializeDb,
+} from './db';
 
 import { createSkiChart } from './grapher';
 import cron from './weekly';
@@ -170,8 +176,10 @@ bot.command('analyysi', async (ctx) => {
         .reduce((acc, entry) => acc + entry.amount, 0)
         .toFixed(2);
 
+    const nickname = await getNickname(ctx.message.from.id);
+
     const captionTextMultiline = `
-${ctx.message.from.first_name}, tässä sun hiihdot
+${nickname || ctx.message.from.first_name}, tässä sun hiihdot
 
 Viimeisen 7 päivän hiihdot: ${totalLastWeek}km
 Viimeisen 30 päivän hiihdot: ${totalLastMonth}km
