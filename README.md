@@ -28,7 +28,7 @@ Season boundaries are computed in local time, so the container pins
 -   Create a `.env` file based on the `.env.example` and fill the necessary values.
 -   Use Docker Compose to run the bot: `docker compose up --build`
 
-Requires Node 24+ and pnpm outside Docker. This repo is pnpm-only — install with
+Requires Node 26+ and pnpm outside Docker. This repo is pnpm-only — install with
 `pnpm install`; npm and yarn are rejected. `pnpm run dev` runs the TypeScript
 sources directly via Node's built-in type stripping — no transpiler needed.
 `pnpm run build` emits `dist/`, and `pnpm run typecheck` checks types without

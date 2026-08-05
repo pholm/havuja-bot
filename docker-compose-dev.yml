@@ -3,8 +3,9 @@ services:
         build:
             context: .
             dockerfile_inline: |
-                FROM node:24-alpine
+                FROM node:26-alpine
                 WORKDIR /usr/havujabot
+                RUN npm i -g corepack@latest
                 RUN corepack enable pnpm
                 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
                 RUN pnpm install --frozen-lockfile
