@@ -1,0 +1,2 @@
+minimumReleaseAgeExclude:
+  - '@types/pg@8.20.4'
