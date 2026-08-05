@@ -23,9 +23,12 @@ const cheersReply = async (
     userId: number,
     fallbackName: string,
     kmRounded: number,
+    seasonId: number,
 ) => {
     const nickname = await conversation.external(() => db.getNickname(userId));
-    const stats = await conversation.external(() => db.getStatsForUser(userId));
+    const stats = await conversation.external(() =>
+        db.getStatsForUser(userId, seasonId),
+    );
     const total = stats
         ? ` Sinulla on nyt ${stats.amount.toFixed(2)} kilometriä kasassa.`
         : '';
@@ -58,6 +61,7 @@ const deleteMessagesSafely = async (
 export async function skiRecordConversation(
     conversation: BotConversation,
     ctx: ConversationContext,
+    seasonId: number,
 ) {
     let current = ctx;
     const messagesToDelete: number[] = [];
@@ -123,6 +127,7 @@ export async function skiRecordConversation(
                 from.last_name ?? null,
                 new Date(),
                 kmRounded,
+                seasonId,
             ),
         );
 
@@ -140,6 +145,7 @@ export async function skiRecordConversation(
                 from.id,
                 from.first_name,
                 kmRounded,
+                seasonId,
             ),
             { reply_markup: { remove_keyboard: true } },
         );
@@ -158,6 +164,7 @@ export async function skiRecordConversation(
 export async function betConversation(
     conversation: BotConversation,
     ctx: ConversationContext,
+    seasonId: number,
 ) {
     let current = ctx;
 
@@ -202,7 +209,7 @@ export async function betConversation(
         }
 
         const currentBet = await conversation.external(() =>
-            db.getBet(from.id),
+            db.getBet(from.id, seasonId),
         );
         if (currentBet && currentBet > bet) {
             await current.reply(
@@ -215,7 +222,13 @@ export async function betConversation(
         }
 
         const result = await conversation.external(() =>
-            db.setBet(from.id, from.first_name, from.last_name ?? null, bet),
+            db.setBet(
+                from.id,
+                from.first_name,
+                from.last_name ?? null,
+                bet,
+                seasonId,
+            ),
         );
 
         if (!result.success) {

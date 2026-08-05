@@ -4,11 +4,13 @@ import { after, before, beforeEach, describe, it } from 'node:test';
 import {
     closeDatabase,
     createTestBot,
+    openTestSeason,
     query,
     resetDatabase,
     setupDatabase,
     stubChartService,
 } from './helpers/harness.ts';
+import type { Season } from '../src/db/index.ts';
 import {
     ALICE,
     BOB,
@@ -19,6 +21,7 @@ import {
 import { getBet, getEntriesForUser, getNickname } from '../src/db/index.ts';
 
 let chart: ReturnType<typeof stubChartService>;
+let season: Season;
 
 before(async () => {
     chart = stubChartService();
@@ -32,6 +35,7 @@ after(async () => {
 
 beforeEach(async () => {
     await resetDatabase();
+    season = await openTestSeason();
 });
 
 describe('/latua — recording a ski', () => {
@@ -66,7 +70,7 @@ describe('/latua — recording a ski', () => {
         );
         assert.ok(texts.some((t) => t.includes('12.50 kilometriä kasassa')));
 
-        const rows = await getEntriesForUser(ALICE.id);
+        const rows = await getEntriesForUser(ALICE.id, season.id);
         assert.equal(rows.length, 1);
         assert.equal(Number(rows[0].amount), 12.5);
     });
@@ -77,7 +81,7 @@ describe('/latua — recording a ski', () => {
         await bot.handleUpdate(commandUpdate('latua'));
         await bot.handleUpdate(textUpdate('8,25'));
 
-        const rows = await getEntriesForUser(ALICE.id);
+        const rows = await getEntriesForUser(ALICE.id, season.id);
         assert.equal(Number(rows[0].amount), 8.25);
     });
 
@@ -87,7 +91,7 @@ describe('/latua — recording a ski', () => {
         await bot.handleUpdate(commandUpdate('latua'));
         await bot.handleUpdate(textUpdate('3.14159'));
 
-        const rows = await getEntriesForUser(ALICE.id);
+        const rows = await getEntriesForUser(ALICE.id, season.id);
         assert.equal(Number(rows[0].amount), 3.14);
     });
 
@@ -103,11 +107,11 @@ describe('/latua — recording a ski', () => {
         assert.ok(
             texts.some((t) => t.includes('laitappas vielä ne kilometrit')),
         );
-        assert.equal((await getEntriesForUser(ALICE.id)).length, 0);
+        assert.equal((await getEntriesForUser(ALICE.id, season.id)).length, 0);
 
         await bot.handleUpdate(textUpdate('7.25'));
 
-        const rows = await getEntriesForUser(ALICE.id);
+        const rows = await getEntriesForUser(ALICE.id, season.id);
         assert.equal(rows.length, 1, 'the retry stores exactly one row');
         assert.equal(Number(rows[0].amount), 7.25);
     });
@@ -124,7 +128,7 @@ describe('/latua — recording a ski', () => {
                 .textsSince(mark)
                 .some((t) => t.includes('Vastaa nyt järkevästi')),
         );
-        assert.equal((await getEntriesForUser(ALICE.id)).length, 0);
+        assert.equal((await getEntriesForUser(ALICE.id, season.id)).length, 0);
     });
 
     it('tidies up the command, the prompt and the answer', async () => {
@@ -151,7 +155,7 @@ describe('/latua — recording a ski', () => {
         await bot.handleUpdate(commandUpdate('latua'));
         await bot.handleUpdate(textUpdate('5.5'));
 
-        const rows = await getEntriesForUser(ALICE.id);
+        const rows = await getEntriesForUser(ALICE.id, season.id);
         assert.equal(rows.length, 2);
         const total = rows.reduce((sum, row) => sum + Number(row.amount), 0);
         assert.equal(total, 15.5);
@@ -170,7 +174,7 @@ describe('/betti — setting a bet', () => {
             .since(mark)
             .find((call) => call.method === 'sendPhoto');
         assert.ok(photo, 'expected a sendPhoto call');
-        assert.equal(await getBet(ALICE.id), 750);
+        assert.equal(await getBet(ALICE.id, season.id), 750);
     });
 
     it('refuses to lower an existing bet and keeps the old value', async () => {
@@ -188,7 +192,7 @@ describe('/betti — setting a bet', () => {
                 .textsSince(mark)
                 .some((t) => t.includes('Et voi betata vähemmän kuin 750')),
         );
-        assert.equal(await getBet(ALICE.id), 750);
+        assert.equal(await getBet(ALICE.id, season.id), 750);
     });
 
     it('allows raising an existing bet', async () => {
@@ -199,7 +203,7 @@ describe('/betti — setting a bet', () => {
         await bot.handleUpdate(commandUpdate('betti'));
         await bot.handleUpdate(textUpdate('1000'));
 
-        assert.equal(await getBet(ALICE.id), 1000);
+        assert.equal(await getBet(ALICE.id, season.id), 1000);
     });
 
     it('re-prompts on unparsable input', async () => {
@@ -211,7 +215,7 @@ describe('/betti — setting a bet', () => {
 
         const texts = telegram.textsSince(mark);
         assert.ok(texts.some((t) => t.includes('Syötä betti muodossa 100')));
-        assert.equal(await getBet(ALICE.id), null);
+        assert.equal(await getBet(ALICE.id, season.id), null);
     });
 
     it('asks again when the reply carries no text', async () => {
@@ -310,11 +314,11 @@ describe('wizard isolation between users', () => {
         await bot.handleUpdate(textUpdate('500', ALICE));
         await bot.handleUpdate(textUpdate('9', BOB));
 
-        assert.equal(await getBet(ALICE.id), 500);
-        assert.equal(await getBet(BOB.id), null);
+        assert.equal(await getBet(ALICE.id, season.id), 500);
+        assert.equal(await getBet(BOB.id, season.id), null);
 
-        assert.equal((await getEntriesForUser(BOB.id)).length, 1);
-        assert.equal((await getEntriesForUser(ALICE.id)).length, 0);
+        assert.equal((await getEntriesForUser(BOB.id, season.id)).length, 1);
+        assert.equal((await getEntriesForUser(ALICE.id, season.id)).length, 0);
     });
 
     it('keeps each skier’s totals separate', async () => {

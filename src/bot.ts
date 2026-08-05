@@ -1,11 +1,11 @@
 import { Bot, InputFile, MemorySessionStorage } from 'grammy';
 import type { BotConfig } from 'grammy';
 import { conversations, createConversation } from '@grammyjs/conversations';
-import { differenceInDays, differenceInMonths, formatDistance } from 'date-fns';
+import { formatDistance } from 'date-fns';
 import { fi } from 'date-fns/locale';
 
 import type { BotContext } from './context.ts';
-import { BOT_TOKEN, CHAT_ID } from './env.ts';
+import { BOT_TOKEN, CHAT_ID, isAdmin } from './env.ts';
 import {
     BET_CONVERSATION,
     NICKNAME_CONVERSATION,
@@ -15,43 +15,29 @@ import {
     skiRecordConversation,
 } from './conversations.ts';
 import {
+    getActiveSeason,
     getBet,
     getEntriesForUser,
     getNickname,
+    getSeasonForReporting,
     getStatistics,
+    openSeason,
 } from './db/index.ts';
 import { createSkiChart } from './grapher.ts';
+import { timeUntilString } from './seasons.ts';
 
-// Define deadline date (May 1, 2026)
-export const deadLineDate = new Date(2026, 4, 1);
+/** Shown whenever someone tries to compete outside a running season. */
+export const NO_SEASON_MESSAGE =
+    'Ei kausi käynnissä. Odota että kausi avataan komennolla /avaakausi.';
 
-// Helper function for pluralization
-const pluralize = (count: number, singular: string, plural: string): string => {
-    return `${count} ${count === 1 ? singular : plural}`;
-};
-
-// Function to generate a string representing the time until the deadline
-const timeUntilDeadLineString = (): string => {
-    const now = new Date();
-    const months = differenceInMonths(deadLineDate, now);
-    const monthsDate = new Date(now);
-    monthsDate.setMonth(monthsDate.getMonth() + months);
-    const days = differenceInDays(deadLineDate, monthsDate);
-
-    if (months < 0) {
-        return 'Wabu ei lobu';
-    }
-
-    return `Aikaa Wappuun ${pluralize(
-        months,
-        'kuukausi',
-        'kuukautta',
-    )} ja ${pluralize(days, 'päivä', 'päivää')}!`;
-};
+const formatDate = (date: Date) =>
+    new Intl.DateTimeFormat('fi-FI', {
+        dateStyle: 'long',
+    }).format(date);
 
 // Function to generate stats reply
-const statsReply = async () => {
-    const userListWithScores = await getStatistics();
+const statsReply = async (seasonId: number, endsAt: Date) => {
+    const userListWithScores = await getStatistics(seasonId);
 
     const retString: string[] = userListWithScores.map((entry) => {
         // Logic for generating the time ago string
@@ -82,7 +68,7 @@ const statsReply = async () => {
 Nonii, katellaas vähä paljo peli
 
 ${retString.join('')}
-${timeUntilDeadLineString()}
+${timeUntilString(endsAt)}
 `;
 };
 
@@ -137,14 +123,55 @@ export const createBot = (config?: BotConfig<BotContext>) => {
 
     bot.command('help', (ctx) => ctx.reply('Lehviltä skiergo lainaksi?'));
 
+    // Opens a new season. Admins only; see ADMIN_USER_IDS.
+    bot.command('avaakausi', async (ctx) => {
+        if (!isAdmin(ctx.from?.id)) {
+            await ctx.reply('Vain atk-jaosto voi avata kauden.');
+            return;
+        }
+
+        const running = await getActiveSeason();
+        if (running !== null) {
+            await ctx.reply(
+                `Kausi on jo käynnissä, se päättyy ${formatDate(
+                    new Date(running.ends_at),
+                )}.`,
+            );
+            return;
+        }
+
+        const result = await openSeason(new Date());
+        if (!result.success) {
+            await ctx.reply('Jokin meni pieleen, yritä uudelleen.');
+            return;
+        }
+
+        await ctx.reply(
+            `<b>Uusi kausi on avattu!</b> 🎿\n\n` +
+                `Kisa päättyy ${formatDate(new Date(result.season.ends_at))} klo 9.\n` +
+                `Pistäkää betit tiskiin komennolla /betti.`,
+            { parse_mode: 'HTML' },
+        );
+    });
+
     // Handle command for adding a new record
     bot.command('latua', async (ctx) => {
-        await ctx.conversation.enter(SKI_RECORD_CONVERSATION);
+        const season = await getActiveSeason();
+        if (season === null) {
+            await ctx.reply(NO_SEASON_MESSAGE);
+            return;
+        }
+        await ctx.conversation.enter(SKI_RECORD_CONVERSATION, season.id);
     });
 
     // Handle command for setting the bet
     bot.command('betti', async (ctx) => {
-        await ctx.conversation.enter(BET_CONVERSATION);
+        const season = await getActiveSeason();
+        if (season === null) {
+            await ctx.reply(NO_SEASON_MESSAGE);
+            return;
+        }
+        await ctx.conversation.enter(BET_CONVERSATION, season.id);
     });
 
     // Handle command for changing the nickname
@@ -159,15 +186,26 @@ export const createBot = (config?: BotConfig<BotContext>) => {
             return;
         }
 
-        const skiEntries = await getEntriesForUser(from.id);
-        const bet = await getBet(from.id);
+        // Between seasons this reports on the one that just finished.
+        const season = await getSeasonForReporting();
+        if (season === null) {
+            await ctx.reply(NO_SEASON_MESSAGE);
+            return;
+        }
+
+        const skiEntries = await getEntriesForUser(from.id, season.id);
+        const bet = await getBet(from.id, season.id);
 
         if (skiEntries.length === 0) {
             await ctx.reply('Ei hiihtoja vielä');
             return;
         }
 
-        const imageBuffer = await createSkiChart(skiEntries, deadLineDate, bet);
+        const imageBuffer = await createSkiChart(
+            skiEntries,
+            new Date(season.ends_at),
+            bet,
+        );
         const totalLastWeek = skiEntries
             .filter((entry) => {
                 const lastWeek = new Date();
@@ -204,7 +242,15 @@ Hyvin menee!`;
 
     // Command for getting generic stats
     bot.command('stats', async (ctx) => {
-        await ctx.reply(await statsReply(), { parse_mode: 'HTML' });
+        const season = await getSeasonForReporting();
+        if (season === null) {
+            await ctx.reply(NO_SEASON_MESSAGE);
+            return;
+        }
+
+        await ctx.reply(await statsReply(season.id, new Date(season.ends_at)), {
+            parse_mode: 'HTML',
+        });
     });
 
     // Global error handler
@@ -226,6 +272,7 @@ Hyvin menee!`;
 export const setMyCommands = (bot: Bot<BotContext>) =>
     bot.api.setMyCommands([
         { command: 'analyysi', description: 'Katso omat hiihdot' },
+        { command: 'avaakausi', description: 'Avaa uusi kausi (atk-jaosto)' },
         { command: 'betti', description: 'Aseta betti' },
         { command: 'help', description: 'Apua' },
         { command: 'latua', description: 'Lisää uusi rykäsy' },

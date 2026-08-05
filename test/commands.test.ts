@@ -4,6 +4,7 @@ import { after, before, beforeEach, describe, it } from 'node:test';
 import {
     closeDatabase,
     createTestBot,
+    openTestSeason,
     resetDatabase,
     setupDatabase,
     stubChartService,
@@ -24,6 +25,7 @@ after(async () => {
 
 beforeEach(async () => {
     await resetDatabase();
+    await openTestSeason();
     chart.requestedUrls.length = 0;
 });
 

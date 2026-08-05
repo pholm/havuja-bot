@@ -3,7 +3,8 @@ import https from 'node:https';
 import { Pool } from 'pg';
 
 import { createBot } from '../../src/bot.ts';
-import { closePool, initializeDb } from '../../src/db/index.ts';
+import type { Season } from '../../src/db/index.ts';
+import { closePool, initializeDb, openSeason } from '../../src/db/index.ts';
 import { BOT_INFO, FakeTelegram } from './telegram.ts';
 
 /**
@@ -56,8 +57,27 @@ export const setupDatabase = async () => {
 
 export const resetDatabase = async () => {
     await testPool.query(
-        'TRUNCATE ski_entries, users RESTART IDENTITY CASCADE',
+        'TRUNCATE ski_entries, season_bets, seasons, users RESTART IDENTITY CASCADE',
     );
+};
+
+/** Opens a season running from now until the next 1st of May. */
+export const openTestSeason = async (): Promise<Season> => {
+    const result = await openSeason(new Date());
+    if (!result.success) {
+        throw new Error(`could not open a test season: ${result.message}`);
+    }
+    return result.season;
+};
+
+/** A season that has already run past its end date but was never closed. */
+export const insertOverdueSeason = async (): Promise<Season> => {
+    const rows = await query<Season>(
+        `INSERT INTO seasons (started_at, ends_at)
+         VALUES (NOW() - INTERVAL '2 years', NOW() - INTERVAL '1 day')
+         RETURNING id, started_at, ends_at, closed_at`,
+    );
+    return rows[0];
 };
 
 /** Drains both pools so the test process can exit on its own. */

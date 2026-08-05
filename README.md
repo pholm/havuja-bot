@@ -4,6 +4,24 @@ A telegram bot for tracking skied distance in a group chat. Based on [tonni-bot]
 
 You might think it's completely overengineered and you'd be right.
 
+## Seasons
+
+A season runs from whenever it is opened until 09:00 on the next 1st of May.
+Bets and kilometres belong to a season, so nothing carries over and the bot no
+longer needs its deadline edited every year.
+
+- `/avaakausi` opens a season. Restricted to the ids in `ADMIN_USER_IDS`,
+  which defaults to the atk-jaosto list in `src/env.ts`. To find someone's
+  numeric id, have them message [@userinfobot](https://t.me/userinfobot).
+- At 09:00 on the 1st of May the bot posts the final standings and closes the
+  season. If it happens to be down that morning it does this on its next start
+  instead, so the recap is never skipped.
+- Between seasons `/latua` and `/betti` are refused. `/stats` and `/analyysi`
+  keep reporting the season that just finished.
+
+Season boundaries are computed in local time, so the container pins
+`TZ=Europe/Helsinki`.
+
 ## Development
 
 -   Create a Telegram bot using BotFather
