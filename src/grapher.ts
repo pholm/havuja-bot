@@ -1,12 +1,21 @@
-const QuickChart = require('quickchart-js');
-import https = require('https');
+// quickchart-js v4 ships one CJS-shaped .d.ts for both its CJS and ESM builds,
+// so under nodenext TypeScript types the default import as the module namespace.
+// The .mjs build we actually load default-exports the class, hence the cast.
+import * as quickchart from 'quickchart-js';
+import https from 'node:https';
 
-import { IncomingMessage } from 'http';
+const QuickChart =
+    quickchart.default as unknown as typeof quickchart.default.default;
+
+import type { IncomingMessage } from 'node:http';
+
+/** A user without a bet plots as a null point, which Chart.js simply skips. */
+type ChartPoint = { x: Date; y: number | null };
 
 export const createSkiChart = async (
     skiEntries: { timestamp: string; amount: number }[],
     deadlineDate: Date,
-    bet: number,
+    bet: number | null,
 ): Promise<Buffer> => {
     const chart = new QuickChart();
     const sortedSkiEntries = skiEntries
@@ -16,30 +25,33 @@ export const createSkiChart = async (
         }))
         .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
-    const cumulativeSkiData = sortedSkiEntries.reduce((acc, entry) => {
-        const lastValue = acc.length > 0 ? acc[acc.length - 1].y : 0;
-        acc.push({
-            x: entry.timestamp,
-            y: lastValue + entry.amount,
-        });
-        return acc;
-    }, []);
+    const cumulativeSkiData = sortedSkiEntries.reduce<{ x: Date; y: number }[]>(
+        (acc, entry) => {
+            const lastValue = acc.length > 0 ? acc[acc.length - 1].y : 0;
+            acc.push({
+                x: entry.timestamp,
+                y: lastValue + entry.amount,
+            });
+            return acc;
+        },
+        [],
+    );
 
     // add for the first date a 0 value, to the first position of the array
     cumulativeSkiData.unshift({ x: sortedSkiEntries[0].timestamp, y: 0 });
 
-    const trendData = [
+    const trendData: ChartPoint[] = [
         { x: sortedSkiEntries[0].timestamp, y: 0 },
         { x: deadlineDate, y: bet },
     ];
 
-    const betData = [
+    const betData: ChartPoint[] = [
         { x: sortedSkiEntries[0].timestamp, y: bet },
         { x: deadlineDate, y: bet },
     ];
 
     // labels every two weeks from first entry to deadlineDate
-    const labels = [];
+    const labels: Date[] = [];
     const firstEntry = sortedSkiEntries[0].timestamp;
     const diff = deadlineDate.getTime() - firstEntry.getTime();
     const days = diff / (1000 * 60 * 60 * 24);
@@ -120,7 +132,7 @@ export const createSkiChart = async (
     return new Promise((resolve, reject) => {
         https
             .get(chartUrl, (response: IncomingMessage) => {
-                const data = [];
+                const data: Buffer[] = [];
 
                 // Collect data as it comes in
                 response.on('data', (chunk) => {

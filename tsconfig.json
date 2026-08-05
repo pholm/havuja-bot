@@ -1,5 +1,21 @@
 {
     "compilerOptions": {
-        "outDir": "dist"
-    }
+        "target": "es2024",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "rootDir": "src",
+        "outDir": "dist",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        // Keeps the sources runnable by `node --watch src/index.ts`, which only
+        // strips types and cannot transpile enums/namespaces/import-equals.
+        "erasableSyntaxOnly": true,
+        "verbatimModuleSyntax": true,
+        // Sources import each other with real `.ts` paths so node can resolve
+        // them directly; tsc rewrites them to `.js` when emitting to dist/.
+        "allowImportingTsExtensions": true,
+        "rewriteRelativeImportExtensions": true,
+        "strict": true
+    },
+    "include": ["src"]
 }

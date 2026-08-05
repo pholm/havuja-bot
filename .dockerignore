@@ -1,0 +1,7 @@
+# Never let host artifacts clobber what `npm ci` / `npm run build` produced.
+node_modules/
+dist/
+test/
+.env
+.git/
+.DS_Store
