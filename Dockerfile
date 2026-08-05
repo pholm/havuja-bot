@@ -3,10 +3,9 @@ FROM node:24-alpine
 # they line up with the cron schedules.
 ENV TZ=Europe/Helsinki
 WORKDIR /usr/havujabot
-COPY package.json .
-COPY package-lock.json .
-RUN npm ci
+RUN corepack enable pnpm
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN npm run build
-# npm run start
-CMD ["npm", "run", "start"]
+RUN pnpm run build
+CMD ["pnpm", "run", "start"]

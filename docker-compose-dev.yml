@@ -5,11 +5,11 @@ services:
             dockerfile_inline: |
                 FROM node:24-alpine
                 WORKDIR /usr/havujabot
-                COPY package.json .
-                COPY package-lock.json .
-                RUN npm i
+                RUN corepack enable pnpm
+                COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+                RUN pnpm install --frozen-lockfile
                 COPY . .
-                CMD ["npm", "run", "dev"]
+                CMD ["pnpm", "run", "dev"]
         ports:
             - 8081:8081
         volumes:

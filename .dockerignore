@@ -1,4 +1,4 @@
-# Never let host artifacts clobber what `npm ci` / `npm run build` produced.
+# Never let host artifacts clobber what `pnpm install` / `pnpm run build` produced.
 node_modules/
 dist/
 test/

@@ -6,14 +6,17 @@
     "author": "Petrus Holm",
     "license": "MIT",
     "engines": {
-        "node": ">=24"
+        "node": ">=24",
+        "pnpm": ">=11"
     },
+    "packageManager": "pnpm@11.20.0",
     "devDependencies": {
         "@types/node": "^26.1.2",
         "@types/pg": "^8.20.4",
         "typescript": "^7.0.2"
     },
     "scripts": {
+        "preinstall": "node -e \"if (!(process.env.npm_config_user_agent || '').startsWith('pnpm')) { console.error('This repo is pnpm-only. Use pnpm install.'); process.exit(1) }\"",
         "dev": "node --watch src/index.ts",
         "start": "node dist/index.js",
         "build": "tsc",

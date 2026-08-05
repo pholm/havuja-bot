@@ -46,7 +46,7 @@ export const setupDatabase = async () => {
                 throw new Error(
                     `Could not reach the test database at ` +
                         `${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}. ` +
-                        `Start one with \`npm run test:db:up\`.\n${String(error)}`,
+                        `Start one with \`pnpm run test:db:up\`.\n${String(error)}`,
                 );
             }
             await new Promise((resolve) => setTimeout(resolve, 250));

@@ -28,9 +28,11 @@ Season boundaries are computed in local time, so the container pins
 -   Create a `.env` file based on the `.env.example` and fill the necessary values.
 -   Use Docker Compose to run the bot: `docker compose up --build`
 
-Requires Node 24+ outside Docker. `npm run dev` runs the TypeScript sources
-directly via Node's built-in type stripping — no transpiler needed. `npm run
-build` emits `dist/`, and `npm run typecheck` checks types without emitting.
+Requires Node 24+ and pnpm outside Docker. This repo is pnpm-only — install with
+`pnpm install`; npm and yarn are rejected. `pnpm run dev` runs the TypeScript
+sources directly via Node's built-in type stripping — no transpiler needed.
+`pnpm run build` emits `dist/`, and `pnpm run typecheck` checks types without
+emitting.
 
 ## Tests
 
@@ -39,9 +41,9 @@ Postgres, with the Telegram API and the chart service faked. It needs a
 throwaway database:
 
 ```
-npm run test:db:up
-npm test
-npm run test:db:down
+pnpm run test:db:up
+pnpm test
+pnpm run test:db:down
 ```
 
 Settings live in `test/test.env`. Test files run one at a time because they
