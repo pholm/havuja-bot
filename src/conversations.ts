@@ -8,6 +8,12 @@ export const BET_CONVERSATION = 'bet';
 export const NICKNAME_CONVERSATION = 'nickname';
 
 /**
+ * How long the confirmation stays up before the wizard tidies the thread away.
+ * Configurable so the test suite does not have to sit through it.
+ */
+const CLEANUP_DELAY_MS = Number(process.env.CLEANUP_DELAY_MS ?? 2000);
+
+/**
  * Every database call has to go through `conversation.external` — a
  * conversation body is replayed from the top on each incoming update, and only
  * external results are cached instead of being run again.
@@ -140,7 +146,8 @@ export async function skiRecordConversation(
 
         // Leave the confirmation up for a moment before tidying the thread.
         await conversation.external(
-            () => new Promise((resolve) => setTimeout(resolve, 2000)),
+            () =>
+                new Promise((resolve) => setTimeout(resolve, CLEANUP_DELAY_MS)),
         );
 
         await deleteMessagesSafely(current, messagesToDelete);

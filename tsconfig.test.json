@@ -1,0 +1,10 @@
+// Typechecks the tests alongside the sources. The build config deliberately
+// only covers src/, so tests never end up in dist/.
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "rootDir": ".",
+        "noEmit": true
+    },
+    "include": ["src", "test"]
+}

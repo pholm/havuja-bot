@@ -17,7 +17,10 @@
         "dev": "node --watch src/index.ts",
         "start": "node dist/index.js",
         "build": "tsc",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit -p tsconfig.test.json",
+        "test": "node --env-file=test/test.env --test --test-concurrency=1 'test/**/*.test.ts'",
+        "test:db:up": "docker run -d --rm --name havuja-test-db -e POSTGRES_USER=havuja -e POSTGRES_PASSWORD=testpass -e POSTGRES_DB=havujatest -p 55432:5432 postgres:alpine",
+        "test:db:down": "docker rm -f havuja-test-db"
     },
     "dependencies": {
         "@grammyjs/conversations": "^2.1.1",

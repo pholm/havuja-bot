@@ -16,12 +16,19 @@ const pool = new Pool({
     connectionTimeoutMillis: 2000,
 });
 
-pool.connect().catch((e) => console.error(e.stack));
+// Fail loudly at boot if the database is unreachable. The client has to go back
+// to the pool afterwards; holding it leaked a connection for the process' life.
+pool.connect()
+    .then((client) => client.release())
+    .catch((e) => console.error(e.stack));
 
 // https://node-postgres.com/apis/pool#error
 pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
 });
+
+/** Drains the pool so the process can exit. */
+export const closePool = () => pool.end();
 
 type StatisticItem = {
     amount: number;
