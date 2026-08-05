@@ -1,5 +1,6 @@
 import { bot } from './index.ts';
 import { getEntriesForLastWeek } from './db/index.ts';
+import { CHAT_ID } from './env.ts';
 import { CronJob } from 'cron';
 
 const sendScheduledMessages = async () => {
@@ -46,7 +47,7 @@ const sendScheduledMessages = async () => {
         reportMessage += `\n\nYhteensä: ${total.toFixed(2)}km`;
         reportMessage += '\nLiukkaita latuja!';
 
-        await bot.telegram.sendMessage(process.env.CHAT_ID, reportMessage, {
+        await bot.api.sendMessage(CHAT_ID, reportMessage, {
             parse_mode: 'HTML',
         });
     } catch (error) {

@@ -1,6 +1,18 @@
-import { type Context, Scenes, Telegraf } from 'telegraf';
-import { betWizard, nicknameWizard, skiRecordWizard } from './scenes.ts';
+import { Bot, InputFile, MemorySessionStorage } from 'grammy';
+import { conversations, createConversation } from '@grammyjs/conversations';
 import { differenceInDays, differenceInMonths, formatDistance } from 'date-fns';
+import { fi } from 'date-fns/locale';
+
+import type { BotContext } from './context.ts';
+import { BOT_TOKEN, CHAT_ID } from './env.ts';
+import {
+    BET_CONVERSATION,
+    NICKNAME_CONVERSATION,
+    SKI_RECORD_CONVERSATION,
+    betConversation,
+    nicknameConversation,
+    skiRecordConversation,
+} from './conversations.ts';
 import {
     getBet,
     getEntriesForUser,
@@ -11,18 +23,12 @@ import {
 
 import { createSkiChart } from './grapher.ts';
 import cron from './weekly.ts';
-import { fi } from 'date-fns/locale';
-
-import LocalSession from 'telegraf-session-local';
 
 // Initialize the database
 initializeDb();
 
 // Define deadline date (May 1, 2026)
 const deadLineDate = new Date(2026, 4, 1);
-
-// Define BotContext type
-export type BotContext = Context & Scenes.SceneContext;
 
 // Helper function for pluralization
 const pluralize = (count: number, singular: string, plural: string): string => {
@@ -48,24 +54,43 @@ const timeUntilDeadLineString = (): string => {
     )} ja ${pluralize(days, 'päivä', 'päivää')}!`;
 };
 
-// Create a new Telegraf bot instance
-export const bot = new Telegraf<BotContext>(process.env.BOT_TOKEN);
+// Create a new bot instance
+export const bot = new Bot<BotContext>(BOT_TOKEN);
 
-// Register session middleware
-bot.use(new LocalSession().middleware());
+// Register the conversations plugin and the wizards it drives.
+// The plugin keys its state by chat by default, which in a group chat would let
+// one member's half-finished wizard swallow everyone else's messages. The old
+// telegraf-session-local setup keyed sessions per user per chat, so do the same.
+bot.use(
+    conversations({
+        storage: {
+            type: 'key',
+            getStorageKey: (ctx) =>
+                ctx.chat === undefined || ctx.from === undefined
+                    ? undefined
+                    : `${ctx.chat.id}:${ctx.from.id}`,
+            adapter: new MemorySessionStorage(),
+        },
+    }),
+);
+bot.use(createConversation(skiRecordConversation, SKI_RECORD_CONVERSATION));
+bot.use(createConversation(betConversation, BET_CONVERSATION));
+bot.use(createConversation(nicknameConversation, NICKNAME_CONVERSATION));
 
 // Set bot commands
-bot.telegram.setMyCommands([
-    { command: 'analyysi', description: 'Katso omat hiihdot' },
-    { command: 'betti', description: 'Aseta betti' },
-    { command: 'help', description: 'Apua' },
-    { command: 'latua', description: 'Lisää uusi rykäsy' },
-    { command: 'kutsumua', description: 'Vaihda lempinimi' },
-    { command: 'stats', description: 'Katso tilastot' },
-]);
+bot.api
+    .setMyCommands([
+        { command: 'analyysi', description: 'Katso omat hiihdot' },
+        { command: 'betti', description: 'Aseta betti' },
+        { command: 'help', description: 'Apua' },
+        { command: 'latua', description: 'Lisää uusi rykäsy' },
+        { command: 'kutsumua', description: 'Vaihda lempinimi' },
+        { command: 'stats', description: 'Katso tilastot' },
+    ])
+    .catch((err) => console.error('Failed to set bot commands', err));
 
 // Function to generate stats reply
-const statsReply = async (ctx: Context) => {
+const statsReply = async () => {
     const userListWithScores = await getStatistics();
 
     const retString: string[] = userListWithScores.map((entry) => {
@@ -101,27 +126,17 @@ ${timeUntilDeadLineString()}
 `;
 };
 
-// Initialize scenes
-const stage = new Scenes.Stage<Scenes.WizardContext>([
-    skiRecordWizard,
-    betWizard,
-    nicknameWizard,
-]);
-
-// Register stage middleware
-bot.use(stage.middleware());
-
 // Register logging middleware
-bot.use((ctx, next) => {
-    if (ctx.message && 'text' in ctx.message) {
-        console.log(`${ctx.from.first_name}: ${ctx.message.text}`);
+bot.use(async (ctx, next) => {
+    if (ctx.message?.text) {
+        console.log(`${ctx.from?.first_name}: ${ctx.message.text}`);
     }
     return next();
 });
 
 // Register chat ID middleware (commented out for testing)
-bot.use((ctx, next) => {
-    if (ctx.chat.id !== parseInt(process.env.CHAT_ID)) {
+bot.use(async (ctx, next) => {
+    if (ctx.chat && ctx.chat.id !== parseInt(CHAT_ID)) {
         console.log(ctx.chat.id);
         // ctx.reply('Laitappa viestit HIIHTO_RINKIIN');
         // return;
@@ -130,30 +145,35 @@ bot.use((ctx, next) => {
     return next();
 });
 
-bot.help((ctx) => ctx.reply('Lehviltä skiergo lainaksi?'));
+bot.command('help', (ctx) => ctx.reply('Lehviltä skiergo lainaksi?'));
 
 // Handle command for adding a new record
 bot.command('latua', async (ctx) => {
-    ctx.scene.enter('SKIED_RECORD_WIZARD');
+    await ctx.conversation.enter(SKI_RECORD_CONVERSATION);
 });
 
 // Handle command for setting the bet
 bot.command('betti', async (ctx) => {
-    ctx.scene.enter('BET_WIZARD');
+    await ctx.conversation.enter(BET_CONVERSATION);
 });
 
 // Handle command for changing the nickname
 bot.command('kutsumua', async (ctx) => {
-    ctx.scene.enter('NICKNAME_WIZARD');
+    await ctx.conversation.enter(NICKNAME_CONVERSATION);
 });
 
 // User-specific graph command
 bot.command('analyysi', async (ctx) => {
-    const skiEntries = await getEntriesForUser(ctx.message.from.id);
-    const bet = await getBet(ctx.message.from.id);
+    const from = ctx.from;
+    if (from === undefined) {
+        return;
+    }
+
+    const skiEntries = await getEntriesForUser(from.id);
+    const bet = await getBet(from.id);
 
     if (skiEntries.length === 0) {
-        ctx.reply('Ei hiihtoja vielä');
+        await ctx.reply('Ei hiihtoja vielä');
         return;
     }
 
@@ -176,35 +196,46 @@ bot.command('analyysi', async (ctx) => {
         .reduce((acc, entry) => acc + entry.amount, 0)
         .toFixed(2);
 
-    const nickname = await getNickname(ctx.message.from.id);
+    const nickname = await getNickname(from.id);
 
     const captionTextMultiline = `
-${nickname || ctx.message.from.first_name}, tässä sun hiihdot
+${nickname || from.first_name}, tässä sun hiihdot
 
 Viimeisen 7 päivän hiihdot: ${totalLastWeek}km
 Viimeisen 30 päivän hiihdot: ${totalLastMonth}km
 
 Hyvin menee!`;
 
-    ctx.replyWithPhoto(
-        { source: imageBuffer },
-        { caption: captionTextMultiline, disable_notification: true },
-    );
+    await ctx.replyWithPhoto(new InputFile(imageBuffer), {
+        caption: captionTextMultiline,
+        disable_notification: true,
+    });
 });
 
 // Command for getting generic stats
 bot.command('stats', async (ctx) => {
-    ctx.replyWithHTML(await statsReply(ctx));
+    await ctx.reply(await statsReply(), { parse_mode: 'HTML' });
 });
 
 // Global error handler
-bot.catch((err, ctx) => {
-    console.error(`Error encountered for ${ctx.updateType}`, err);
-    ctx.reply('Hups! Bitti meni vinoon. Ping ATK-jaosto');
+bot.catch(async (err) => {
+    console.error(
+        `Error encountered for update ${err.ctx.update.update_id}`,
+        err.error,
+    );
+    try {
+        await err.ctx.reply('Hups! Bitti meni vinoon. Ping ATK-jaosto');
+    } catch (replyError) {
+        console.error('Could not report the error to the chat', replyError);
+    }
 });
 
+// Stop polling cleanly so in-flight updates are not lost on redeploy
+process.once('SIGINT', () => bot.stop());
+process.once('SIGTERM', () => bot.stop());
+
 // Launch the bot
-bot.launch();
+bot.start().catch((err) => console.error('Bot stopped unexpectedly', err));
 
 // Start the cron job for the weekly report
 cron();

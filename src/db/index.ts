@@ -1,8 +1,12 @@
 import { Pool } from 'pg';
 
+// POSTGRES_PORT is absent from .env.example, and the previous
+// parseInt(undefined) handed the pool a NaN port instead of Postgres' default.
+const configuredPort = Number(process.env.POSTGRES_PORT);
+
 const pool = new Pool({
     host: process.env.POSTGRES_HOST,
-    port: parseInt(process.env.POSTGRES_PORT),
+    port: Number.isInteger(configuredPort) ? configuredPort : 5432,
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DATABASE,
@@ -29,7 +33,7 @@ type StatisticItem = {
 const createUser = async (
     userId: number,
     firstName: string,
-    lastName: string,
+    lastName: string | null,
 ): Promise<{ success: boolean; message: string }> => {
     const query = `INSERT INTO users (user_id, first_name, last_name, nickname)
                     VALUES ($1, $2, $3, $2) 
@@ -67,7 +71,7 @@ export const setNickname = async (
 export const writeRecordToDb = async (
     userId: number,
     firstName: string,
-    lastName: string,
+    lastName: string | null,
     timestamp: Date,
     amount: number,
 ): Promise<{ success: boolean; message: string }> => {
@@ -122,7 +126,7 @@ export const getNickname = async (userId: number): Promise<string | null> => {
 export const setBet = async (
     userId: number,
     firstName: string,
-    lastName: string,
+    lastName: string | null,
     bet: number,
 ): Promise<{ success: boolean; message: string }> => {
     const query = `INSERT INTO users (user_id, first_name, last_name, bet, nickname) 
