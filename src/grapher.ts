@@ -1,7 +1,13 @@
-const QuickChart = require('quickchart-js');
-import https = require('https');
+// quickchart-js v4 ships one CJS-shaped .d.ts for both its CJS and ESM builds,
+// so under nodenext TypeScript types the default import as the module namespace.
+// The .mjs build we actually load default-exports the class, hence the cast.
+import * as quickchart from 'quickchart-js';
+import https from 'node:https';
 
-import { IncomingMessage } from 'http';
+const QuickChart =
+    quickchart.default as unknown as typeof quickchart.default.default;
+
+import type { IncomingMessage } from 'node:http';
 
 export const createSkiChart = async (
     skiEntries: { timestamp: string; amount: number }[],

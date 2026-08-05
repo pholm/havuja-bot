@@ -1,5 +1,4 @@
-FROM node:alpine
-RUN apk add --no-cache git
+FROM node:24-alpine
 WORKDIR /usr/havujabot
 COPY package.json .
 COPY package-lock.json .

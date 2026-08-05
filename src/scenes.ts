@@ -1,6 +1,6 @@
-import { BotContext } from '.';
+import type { BotContext } from './index.ts';
 import { Scenes } from 'telegraf';
-import db = require('./db');
+import * as db from './db/index.ts';
 
 interface MyWizardSession extends Scenes.WizardSessionData {
     messagesToDelete?: number[];

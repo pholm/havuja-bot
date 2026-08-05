@@ -1,5 +1,5 @@
-import { Context, Scenes, Telegraf } from 'telegraf';
-import { betWizard, nicknameWizard, skiRecordWizard } from './scenes';
+import { type Context, Scenes, Telegraf } from 'telegraf';
+import { betWizard, nicknameWizard, skiRecordWizard } from './scenes.ts';
 import { differenceInDays, differenceInMonths, formatDistance } from 'date-fns';
 import {
     getBet,
@@ -7,13 +7,13 @@ import {
     getNickname,
     getStatistics,
     initializeDb,
-} from './db';
+} from './db/index.ts';
 
-import { createSkiChart } from './grapher';
-import cron from './weekly';
+import { createSkiChart } from './grapher.ts';
+import cron from './weekly.ts';
 import { fi } from 'date-fns/locale';
 
-const LocalSession = require('telegraf-session-local');
+import LocalSession from 'telegraf-session-local';
 
 // Initialize the database
 initializeDb();

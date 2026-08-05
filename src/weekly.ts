@@ -1,6 +1,6 @@
-import { bot } from '.';
-import { getEntriesForLastWeek } from './db';
-const CronJob = require('cron').CronJob;
+import { bot } from './index.ts';
+import { getEntriesForLastWeek } from './db/index.ts';
+import { CronJob } from 'cron';
 
 const sendScheduledMessages = async () => {
     try {
@@ -54,19 +54,16 @@ const sendScheduledMessages = async () => {
     }
 };
 
-const job = new CronJob(
-    // every Sunday at 21:00
-    '0 21 * * 0',
-    async () => {
-        await sendScheduledMessages();
-    },
-    null,
-    true,
-    'Europe/Helsinki',
-);
-
 const cron = () => {
-    job.start();
+    CronJob.from({
+        // every Sunday at 21:00
+        cronTime: '0 21 * * 0',
+        onTick: async () => {
+            await sendScheduledMessages();
+        },
+        timeZone: 'Europe/Helsinki',
+        start: true,
+    });
 };
 
 export default cron;
